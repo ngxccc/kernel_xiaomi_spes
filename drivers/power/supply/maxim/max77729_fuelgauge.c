@@ -524,7 +524,7 @@ static int max77729_fg_read_temp(struct max77729_fuelgauge_data *fuelgauge)
 	}
 
 	//update QRtable registers if temperature range is changed
-	if (tempRangeIdNew != tempRangeIdOld) 
+	if (tempRangeIdNew != tempRangeIdOld)
 	{
 		switch(tempRangeIdNew)
 		{
@@ -2030,7 +2030,7 @@ static int max77729_fg_get_property(struct power_supply *psy,
 		break;
 	case POWER_SUPPLY_PROP_VOLTAGE_NOW:
 		val->intval = max77729_get_fuelgauge_value(fuelgauge, FG_VOLTAGE);
-		val->intval *= 1000; 
+		val->intval *= 1000;
 		/* pr_err("%s: VOLTAGE_NOW (%d)\n",__func__, val->intval); */
 		break;
 		/* Additional Voltage Information (mV) */
@@ -2137,17 +2137,21 @@ static int max77729_fg_get_property(struct power_supply *psy,
 		if (val->intval < 0)
 			val->intval = 0;
 
-        /* fix battery capacity goes down fast from 100% to 99% */
-		if (val->intval >= 995 && val->intval <= 1000) {
-			val->intval = 1000;
-			maxim_battery_full = true;
-		}
-		else if((true == maxim_battery_full)&&(val->intval >= 995 && val->intval <= 1000)) {
-			val->intval = 1000;
-		}
-		else {
-			maxim_battery_full = false;
-		}
+#ifdef CONFIG_UX_FAKE_BATTERY_FULL
+    /* fix battery capacity goes down fast from 100% to 99% */
+    if (val->intval >= 995 && val->intval <= 1000) {
+        val->intval = 1000;
+        maxim_battery_full = true;
+    }
+    else if((true == maxim_battery_full) && (val->intval >= 995 && val->intval <= 1000)) {
+        val->intval = 1000;
+    }
+    else {
+        maxim_battery_full = false;
+    }
+#else
+    maxim_battery_full = false;
+#endif
 
 		fuelgauge->raw_capacity = val->intval;
 
