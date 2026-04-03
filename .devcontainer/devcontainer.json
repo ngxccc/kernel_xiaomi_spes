@@ -1,0 +1,36 @@
+{
+    "name": "Android Kernel Development (spes)",
+    "image": "mcr.microsoft.com/devcontainers/base:ubuntu-22.04",
+    
+    "features": {
+        "ghcr.io/devcontainers/features/common-utils:1": {
+            "installZsh": true,
+            "configureZshAsDefaultShell": true
+        }
+    },
+
+    "postCreateCommand": "sudo apt-get update && sudo apt-get install -y bc bison build-essential flex git libssl-dev libncurses5-dev libelf-dev clang lld llvm ccache make bear python3",
+
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "llvm-vs-code-extensions.vscode-clangd",
+                "xaver.clang-format",               
+                "ms-vscode.cpptools-extension-pack",
+                "mhutchie.git-graph"               
+            ],
+            "settings": {
+                "clangd.arguments": [
+                    "--compile-commands-dir=out",    
+                    "--background-index",
+                    "--clang-tidy",
+                    "--completion-style=detailed",
+                    "--header-insertion=never"
+                ],
+                "C_Cpp.intelliSenseEngine": "disabled"
+            }
+        }
+    },
+  
+    "remoteUser": "vscode"
+}
