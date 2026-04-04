@@ -64,10 +64,6 @@ jobs:
           # Configure ccache max size
           ccache -M 5G
 
-          # Patch Makefile: Remove deprecated/incompatible Clang flags
-          sed -i 's/-enable-trivial-auto-var-init-zero-knowing-it-will-be-removed-from-clang//g' Makefile
-          sed -i 's/-ftrivial-auto-var-init=zero//g' Makefile
-
           # Build using LLVM=1 (Automatically uses clang, ld.lld, llvm-ar, etc.)
           make O=out LLVM=1 vendor/spes-perf_defconfig
           make -j$(nproc --all) O=out LLVM=1 \
