@@ -14,18 +14,20 @@ echo "📍 Root directory set to: $KERNEL_ROOT"
 export ARCH=arm64
 export CROSS_COMPILE=aarch64-linux-gnu-
 export LLVM=1
+export LLVM_IAS=1
+
 DEFCONFIG="vendor/spes-perf_defconfig"
 
 echo "🔥 [1/5] Cleaning build artifacts..."
-make LLVM=1 mrproper
+make LLVM=1 LLVM_IAS=1 mrproper
 
 echo "🛠️ [2/5] Applying $DEFCONFIG..."
-make LLVM=1 $DEFCONFIG
+make LLVM=1 LLVM_IAS=1 $DEFCONFIG
 
 echo "🏗️ [4/5] Preparing Kernel headers and scripts..."
-make LLVM=1 olddefconfig
-make LLVM=1 prepare -j$(nproc)
-make LLVM=1 modules_prepare -j$(nproc)
+make LLVM=1 LLVM_IAS=1 olddefconfig
+make LLVM=1 LLVM_IAS=1 prepare -j$(nproc)
+make LLVM=1 LLVM_IAS=1 modules_prepare -j$(nproc)
 
 echo "🗺️ [5/5] Generating LSP compile_commands.json..."
 python3 scripts/gen_compile_commands.py
