@@ -98,32 +98,53 @@ jobs:
           name: spes-kernel-flashable
           path: "*.zip"
 
-      - name: 📱 Telegram Notification
+      - name: 📱 Telegram Notification & File Delivery
         if: always()
         env:
           BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: |
-          STATUS="${{ job.status == 'success' && '✅ SUCCESS' || '❌ FAILED' }}"
+          # 1. Determine build status
+          if [ "${{ job.status }}" == "success" ]; then
+            STATUS="✅ SUCCESS"
+          else
+            STATUS="❌ FAILED"
+          fi
+
+          # 2. Safely find the generated zip file
           shopt -s nullglob
           ZIP_FILES=(*.zip)
           if [ ${#ZIP_FILES[@]} -gt 0 ]; then
-            ZIP_NAME="${ZIP_FILES[0]}"
+            ZIP_FILE="${ZIP_FILES[0]}"
           else
-            ZIP_NAME="None"
+            ZIP_FILE=""
           fi
 
+          # 3. Construct the HTML formatted message
           RUN_URL="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
           MESSAGE="🚀 <b>Kernel Build Report</b>
 
           📌 <b>Status:</b> ${STATUS}
           🏗️ <b>Compiler:</b> Clang ${CLANG_VERSION:-unknown}
-          📦 <b>Artifact:</b> <code>${ZIP_NAME}</code>
+          📦 <b>Artifact:</b> <code>${ZIP_FILE:-None}</code>
           👤 <b>Built by:</b> ${GITHUB_ACTOR}
 
-          🔗 <a href=\"${RUN_URL}\">Download &amp; Logs</a>"
+          🔗 <a href=\"${RUN_URL}\">View Github Logs</a>"
 
-          curl -sS -X POST "https://api.telegram.org/bot${BOT_TOKEN}/sendMessage" \
-               -d chat_id="${CHAT_ID}" \
-               -d parse_mode="HTML" \
-               --data-urlencode text="${MESSAGE}"
+          # 4. Routing: Send Document on Success, Text-only on Failure
+          if [ "${{ job.status }}" == "success" ] && [ -n "$ZIP_FILE" ]; then
+            echo "[INFO] Build success! Uploading $ZIP_FILE to Telegram..."
+            # Using multipart/form-data (-F) to upload binary file and caption
+            curl -sS -X POST "https://api.telegram.org/bot${BOT_TOKEN}/sendDocument" \
+              -F chat_id="${CHAT_ID}" \
+              -F parse_mode="HTML" \
+              -F document=@"${ZIP_FILE}" \
+              -F caption="${MESSAGE}"
+          else
+            echo "[INFO] Build failed or missing artifact. Sending text notification..."
+            # Fallback to simple URL-encoded text message
+            curl -sS -X POST "https://api.telegram.org/bot${BOT_TOKEN}/sendMessage" \
+              -d chat_id="${CHAT_ID}" \
+              -d parse_mode="HTML" \
+              --data-urlencode text="${MESSAGE}"
+          fi
