@@ -22,11 +22,6 @@ make LLVM=1 mrproper
 echo "🛠️ [2/5] Applying $DEFCONFIG..."
 make LLVM=1 $DEFCONFIG
 
-echo "💉 [3/5] Patching Makefile: Removing deprecated Clang flags..."
-# Backup Makefile (.bak) and strip flags incompatible with modern LLVM
-sed -i.bak 's/-enable-trivial-auto-var-init-zero-knowing-it-will-be-removed-from-clang//g' Makefile
-sed -i.bak 's/-ftrivial-auto-var-init=zero//g' Makefile
-
 echo "🏗️ [4/5] Preparing Kernel headers and scripts..."
 make LLVM=1 olddefconfig
 make LLVM=1 prepare -j$(nproc)
