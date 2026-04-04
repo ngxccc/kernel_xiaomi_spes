@@ -107,7 +107,12 @@ jobs:
           echo "Detected RAM: ${TOTAL_MEM_GB}G | CPU: ${CPU_CORES} | Build jobs: ${JOBS}"
 
           # Build using LLVM=1 (Automatically uses clang, ld.lld, llvm-ar, etc.)
-          make O="$OUT_DIR" LLVM=1 vendor/spes-perf_defconfig
+          DEFCONFIG="vendor/spes-perf_defconfig"
+          if [ ! -f "arch/arm64/configs/${DEFCONFIG}" ]; then
+            echo "[ERROR] Missing defconfig: arch/arm64/configs/${DEFCONFIG}"
+            exit 1
+          fi
+          make O="$OUT_DIR" LLVM=1 KBUILD_DEFCONFIG="$DEFCONFIG" defconfig
           if ! make -j"${JOBS}" O="$OUT_DIR" LLVM=1 \
                CC="ccache clang" \
                Image.gz-dtb; then
