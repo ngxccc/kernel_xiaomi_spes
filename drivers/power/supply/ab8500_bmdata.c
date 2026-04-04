@@ -455,7 +455,7 @@ static int ab8500_charge_input_curr_map[] = {
         700,    800,    900,    1000,   1100,   1300,   1400,   1500,
 };
 
-struct abx500_bm_data ab8500_bm_data = {
+static struct abx500_bm_data __maybe_unused ab8500_bm_data = {
 	.temp_under             = 3,
 	.temp_low               = 8,
 	.temp_high              = 43,

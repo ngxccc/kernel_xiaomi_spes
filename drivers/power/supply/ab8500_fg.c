@@ -245,8 +245,10 @@ static LIST_HEAD(ab8500_fg_list);
  */
 struct ab8500_fg *ab8500_fg_get(void)
 {
-	return list_first_entry_or_null(&ab8500_fg_list, struct ab8500_fg,
-					node);
+	if (list_empty(&ab8500_fg_list))
+		return NULL;
+
+	return list_first_entry(&ab8500_fg_list, struct ab8500_fg, node);
 }
 
 /* Main battery properties */

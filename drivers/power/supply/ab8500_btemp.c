@@ -28,6 +28,12 @@
 #include <linux/mfd/abx500/ab8500-bm.h>
 #include <linux/mfd/abx500/ab8500-gpadc.h>
 
+struct ab8500_fg *ab8500_fg_get(void);
+int ab8500_fg_inst_curr_start(struct ab8500_fg *fg);
+bool ab8500_fg_inst_curr_started(struct ab8500_fg *fg);
+bool ab8500_fg_inst_curr_done(struct ab8500_fg *fg);
+int ab8500_fg_inst_curr_finalize(struct ab8500_fg *fg, int *res);
+
 #define VTVOUT_V			1800
 
 #define BTEMP_THERMAL_LOW_LIMIT		-10

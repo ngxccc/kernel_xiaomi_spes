@@ -18,8 +18,6 @@
 #include <linux/pmic-voter.h>
 #include <linux/ktime.h>
 #include <linux/time.h>
-#include "nopmi_chg_common.h"
-#include "nopmi/bq2589x_charger.h"
 
 #define BQ_TAPER_HYS_MV				10
 #define TAPER_VOL_HYS				80
@@ -142,7 +140,7 @@ struct cp_device {
     int vbus_error_low;
     int vbus_error_high;
 
-    int  bat_temp; 
+    int  bat_temp;
     int  bus_temp;
     int  die_temp;
 };
@@ -156,9 +154,9 @@ struct usbpd_pm {
 	bool is_pps_en_unlock;
     int hrst_cnt;
 	POWER_LIST* pdo;
-    
+
 	enum pm_state state;
-	
+
 	struct cp_device cp;
 	struct cp_device cp_sec;
 
