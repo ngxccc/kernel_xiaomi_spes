@@ -40,9 +40,38 @@ if [[ -n "${KBUILD_BUILD_HOST:-}" ]]; then
 	export KBUILD_BUILD_HOST
 fi
 
+remove_dir() {
+	local target_dir="$1"
+	if [[ ! -e "$target_dir" ]]; then
+		return 0
+	fi
+	if rm -rf "$target_dir"; then
+		return 0
+	fi
+	if command -v sudo >/dev/null 2>&1; then
+		sudo rm -rf "$target_dir"
+		return 0
+	fi
+	echo "❌ Cannot remove $target_dir. Check permissions or run the script with sudo."
+	exit 1
+}
+
+ensure_dir() {
+	local target_dir="$1"
+	if mkdir -p "$target_dir"; then
+		return 0
+	fi
+	if command -v sudo >/dev/null 2>&1; then
+		sudo mkdir -p "$target_dir"
+		return 0
+	fi
+	echo "❌ Cannot create $target_dir. Check permissions or run the script with sudo."
+	exit 1
+}
+
 if [[ "$MODE" == "clean" ]]; then
-	rm -rf "$OUT_DIR"
-	mkdir -p "$OUT_DIR"
+	remove_dir "$OUT_DIR"
+	ensure_dir "$OUT_DIR"
 	make -s O="$OUT_DIR" LLVM="$LLVM" LLVM_IAS="$LLVM_IAS" KBUILD_DEFCONFIG="$DEFCONFIG" defconfig
 else
 	if [[ ! -f "$OUT_DIR/.config" ]]; then

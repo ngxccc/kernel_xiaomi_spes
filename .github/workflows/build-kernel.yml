@@ -10,8 +10,8 @@ jobs:
     name: 🛠️ Compile Kernel
     runs-on: ubuntu-24.04 # Updated to 24.04 to match the DevContainer environment
     env:
-      OUT_DIR: /mnt/kernel-out
-      CCACHE_DIR: /mnt/ccache
+      OUT_DIR: ${{ github.workspace }}/out
+      CCACHE_DIR: ${{ github.workspace }}/ccache
     defaults:
       run:
         working-directory: /home/runner/work/kernel_xiaomi_spes/kernel_xiaomi_spes
@@ -33,8 +33,7 @@ jobs:
                       /usr/share/swift
           sudo apt-get clean
           sudo rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
-          sudo mkdir -p "$OUT_DIR" "$CCACHE_DIR"
-          sudo chown -R "$USER:$USER" "$OUT_DIR" "$CCACHE_DIR"
+          mkdir -p "$OUT_DIR" "$CCACHE_DIR"
           echo "[After cleanup]"
           df -h
 
@@ -71,7 +70,7 @@ jobs:
           export CCACHE_DIR="$CCACHE_DIR"
           export KBUILD_BUILD_USER="n_gxc"
           export KBUILD_BUILD_HOST="Github-Actions"
-          ccache -M 2G
+          ccache -M 2G >/dev/null
           ccache -o compression=true
           ulimit -n 65535
 
