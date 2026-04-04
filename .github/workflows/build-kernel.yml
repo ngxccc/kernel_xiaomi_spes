@@ -12,6 +12,9 @@ jobs:
     env:
       OUT_DIR: /mnt/kernel-out
       CCACHE_DIR: /mnt/ccache
+    defaults:
+      run:
+        working-directory: /home/runner/work/kernel_xiaomi_spes/kernel_xiaomi_spes
 
     environment: production
 
@@ -29,7 +32,6 @@ jobs:
 
       - name: 🧹 Aggressive Disk Cleanup
         run: |
-          ls
           set -e
           echo "[Before cleanup]"
           df -h
