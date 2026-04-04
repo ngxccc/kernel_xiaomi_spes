@@ -1,0 +1,91 @@
+name: 🚀 Build spes Kernel (LLVM 22) & Notify Telegram
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch: # Allows manual triggering from the GitHub Actions tab
+
+jobs:
+  build:
+    name: 🛠️ Compile Kernel
+    runs-on: ubuntu-24.04 # Updated to 24.04 to match the DevContainer environment
+
+    environment: production
+
+    steps:
+      - name: 📥 Checkout Source Code
+        uses: actions/checkout@main
+
+      - name: ⚙️ Install LLVM 22 & Dependencies
+        run: |
+          sudo apt-get update
+          # Install essential build dependencies
+          sudo apt-get install -y wget lsb-release software-properties-common gnupg bc bison flex \
+          libssl-dev libncurses-dev libelf-dev make gcc-aarch64-linux-gnu python3 ccache
+
+          # Fetch the official LLVM installation script
+          wget https://apt.llvm.org/llvm.sh
+          chmod +x llvm.sh
+          sudo ./llvm.sh 22
+
+          # Force symlink so Kbuild detects 'clang', 'ld.lld', etc., instead of versioned names
+          sudo ln -sf /usr/lib/llvm-22/bin/* /usr/bin/
+
+      - name: 🧠 Setup Ccache
+        uses: actions/cache@v5
+        with:
+          path: ~/.ccache
+          key: ${{ runner.os }}-kernel-llvm22-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-kernel-llvm22-
+
+      - name: 🔥 Start Kernel Compilation (LLVM Mode)
+        run: |
+          export ARCH=arm64
+          export SUBARCH=arm64
+          export KBUILD_BUILD_USER="n_gxc"
+          export KBUILD_BUILD_HOST="Github-Actions"
+
+          # Configure ccache max size
+          ccache -M 5G
+
+          # Patch Makefile: Remove deprecated/incompatible Clang flags
+          sed -i 's/-enable-trivial-auto-var-init-zero-knowing-it-will-be-removed-from-clang//g' Makefile
+          sed -i 's/-ftrivial-auto-var-init=zero//g' Makefile
+
+          # Build using LLVM=1 (Automatically uses clang, ld.lld, llvm-ar, etc.)
+          make O=out LLVM=1 spes-perf_defconfig
+          make -j$(nproc --all) O=out LLVM=1 \
+               CC="ccache clang" \
+               Image.gz-dtb
+
+          # Prepare artifacts for upload
+          mkdir -p final_zip
+          cp out/arch/arm64/boot/Image.gz-dtb final_zip/
+
+      - name: 📦 Upload Artifact
+        uses: actions/upload-artifact@v6
+        with:
+          name: spes-kernel-llvm22
+          path: final_zip/Image.gz-dtb
+
+      - name: 📱 Telegram Notification
+        if: always()
+        env:
+          BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          STATUS="${{ job.status == 'success' && '✅ SUCCESS' || '❌ FAILED' }}"
+          MESSAGE="🚀 *Kernel Build Report*
+
+          📌 *Status:* ${STATUS}
+          🏗️ *Compiler:* LLVM 22 (Bleeding Edge)
+          🌿 *Branch:* \`${GITHUB_REF_NAME}\`
+          👤 *Built by:* @${GITHUB_ACTOR}
+
+          🔗 [View Build Logs]($GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID)"
+
+          curl -s -X POST "https://api.telegram.org/bot${BOT_TOKEN}/sendMessage" \
+               -d chat_id="${CHAT_ID}" \
+               -d text="${MESSAGE}" \
+               -d parse_mode="Markdown"
