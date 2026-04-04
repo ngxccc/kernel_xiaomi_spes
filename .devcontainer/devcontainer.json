@@ -14,7 +14,7 @@
     // 2. Download and run LLVM script (auto-fetches latest, e.g., 21/22)
     // 3. Force symlink all LLVM binaries (clang-2x) to standard names (clang)
     //    to prevent Kbuild from getting confused.
-    "postCreateCommand": "sudo apt-get update && sudo apt-get install -y wget lsb-release software-properties-common gnupg bc bison flex libssl-dev libncurses-dev libelf-dev make gcc-aarch64-linux-gnu python3 ccache && wget https://apt.llvm.org/llvm.sh && chmod +x llvm.sh && sudo ./llvm.sh 22 && sudo ln -sf /usr/lib/llvm-*/bin/* /usr/bin/",
+    "postCreateCommand": "sudo apt-get update && sudo apt-get install -y cpio wget lsb-release software-properties-common gnupg bc bison flex libssl-dev libncurses-dev libelf-dev make gcc-aarch64-linux-gnu python3 ccache && wget https://apt.llvm.org/llvm.sh && chmod +x llvm.sh && sudo ./llvm.sh 22 && sudo ln -sf /usr/lib/llvm-*/bin/* /usr/bin/",
 
     "customizations": {
         "vscode": {
