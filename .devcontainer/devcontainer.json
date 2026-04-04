@@ -9,10 +9,11 @@
         }
     },
 
-    // Dùng bash -c để chạy chuỗi lệnh phức tạp:
-    // 1. Cài các dependency bắt buộc cho Kernel & Script LLVM
-    // 2. Tải và chạy script LLVM (tự động lấy bản mới nhất, vd: 21/22)
-    // 3. Ép Symlink toàn bộ file nhị phân của LLVM (clang-2x) thành tên chuẩn (clang) để Kbuild không bị lú
+    // Use bash -c to execute complex command chains:
+    // 1. Install mandatory dependencies for Kernel & LLVM Script
+    // 2. Download and run LLVM script (auto-fetches latest, e.g., 21/22)
+    // 3. Force symlink all LLVM binaries (clang-2x) to standard names (clang)
+    //    to prevent Kbuild from getting confused.
     "postCreateCommand": "sudo apt-get update && sudo apt-get install -y wget lsb-release software-properties-common gnupg bc bison flex libssl-dev libncurses-dev libelf-dev make gcc-aarch64-linux-gnu python3 ccache && wget https://apt.llvm.org/llvm.sh && chmod +x llvm.sh && sudo ./llvm.sh 22 && sudo ln -sf /usr/lib/llvm-*/bin/* /usr/bin/",
 
     "customizations": {
@@ -24,20 +25,31 @@
                 "mhutchie.git-graph"
             ],
             "settings": {
-                // Cấu hình lại Clangd chuẩn chỉ cho Kernel
+                // Reconfigure Clangd specifically for Kernel development
                 "clangd.arguments": [
-                    // Tìm compile_commands.json ở thư mục gốc (nơi bro chạy make)
+                    // Look for compile_commands.json in workspace root (where you run make)
                     "--compile-commands-dir=${workspaceFolder}",
                     "--background-index",
                     "--clang-tidy",
                     "--completion-style=detailed",
                     "--header-insertion=never",
-                    // Ép Clangd chạy đa luồng để scan source code nhanh hơn
+                    // Force Clangd to run multi-threaded for faster source code scanning
                     "-j=4"
                 ],
-                // Tắt IntelliSense cùi bắp của Microsoft để nhường sân khấu cho Clangd
+                // Disable Microsoft's IntelliSense to let Clangd take the stage
                 "C_Cpp.intelliSenseEngine": "disabled",
-                // Mở terminal lên là ZSH cho ngầu
+
+                // --- Format on Save Config ---
+                "editor.formatOnSave": true,
+                "editor.defaultFormatter": "llvm-vs-code-extensions.vscode-clangd",
+                "[cpp]": {
+                    "editor.formatOnSave": true
+                },
+                "[c]": {
+                    "editor.formatOnSave": true
+                },
+
+                // Default to ZSH for a better terminal experience
                 "terminal.integrated.defaultProfile.linux": "zsh"
             }
         }
