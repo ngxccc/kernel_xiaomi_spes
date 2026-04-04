@@ -1,4 +1,4 @@
-name: 🚀 Build spes Kernel (LLVM 22) & Notify Telegram
+name: 🚀 Build spes Kernel (Dynamic Clang) & Notify Telegram
 
 on:
   push:
@@ -35,9 +35,14 @@ jobs:
         uses: actions/cache@v5
         with:
           path: ~/.ccache
-          key: ${{ runner.os }}-kernel-llvm22-${{ github.sha }}
+          key: ${{ runner.os }}-kernel-clang-${{ github.sha }}
           restore-keys: |
-            ${{ runner.os }}-kernel-llvm22-
+            ${{ runner.os }}-kernel-clang-
+
+      - name: 🔎 Detect Clang Version
+        run: |
+          CLANG_VERSION=$(clang --version | head -n1 | sed -E 's/.*version ([0-9]+(\.[0-9]+)*).*/\1/')
+          echo "CLANG_VERSION=${CLANG_VERSION}" >> "$GITHUB_ENV"
 
       - name: 🔥 Start Kernel Compilation (LLVM Mode)
         run: |
@@ -65,11 +70,26 @@ jobs:
           mkdir -p final_zip
           cp out/arch/arm64/boot/Image.gz-dtb final_zip/
 
-      - name: 📦 Upload Artifact
+      - name: 📦 Package with AnyKernel3
+        run: |
+          git clone --depth=1 https://github.com/osm0sis/AnyKernel3.git AnyKernel3
+
+          rm -rf AnyKernel3/.git AnyKernel3/README.md
+
+          # Copy kernel image into AnyKernel3
+          cp out/arch/arm64/boot/Image.gz-dtb AnyKernel3/
+
+          # sed -i 's/device.name1=magnum/device.name1=spes/g' AnyKernel3/anykernel.sh
+
+          cd AnyKernel3
+          zip -r9 "../Spes-Kernel-$(date +'%Y%m%d-%H%M').zip" *
+          cd ..
+
+      - name: 📦 Upload Flashable Zip
         uses: actions/upload-artifact@v6
         with:
-          name: spes-kernel-llvm22
-          path: final_zip/Image.gz-dtb
+          name: spes-kernel-flashable
+          path: "*.zip"
 
       - name: 📱 Telegram Notification
         if: always()
@@ -78,14 +98,16 @@ jobs:
           CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: |
           STATUS="${{ job.status == 'success' && '✅ SUCCESS' || '❌ FAILED' }}"
+          ZIP_NAME=$(ls *.zip || echo "None")
+
           MESSAGE="🚀 *Kernel Build Report*
 
           📌 *Status:* ${STATUS}
-          🏗️ *Compiler:* LLVM 22 (Bleeding Edge)
-          🌿 *Branch:* \`${GITHUB_REF_NAME}\`
+          🏗️ *Compiler:* Clang ${CLANG_VERSION:-unknown}
+          📦 *Artifact:* \`${ZIP_NAME}\`
           👤 *Built by:* @${GITHUB_ACTOR}
 
-          🔗 [View Build Logs]($GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID)"
+          🔗 [Download & Logs]($GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID)"
 
           curl -s -X POST "https://api.telegram.org/bot${BOT_TOKEN}/sendMessage" \
                -d chat_id="${CHAT_ID}" \
