@@ -54,7 +54,7 @@ jobs:
           sed -i 's/-ftrivial-auto-var-init=zero//g' Makefile
 
           # Build using LLVM=1 (Automatically uses clang, ld.lld, llvm-ar, etc.)
-          make O=out LLVM=1 spes-perf_defconfig
+          make O=out LLVM=1 vendor/spes-perf_defconfig
           make -j$(nproc --all) O=out LLVM=1 \
                CC="ccache clang" \
                Image.gz-dtb
