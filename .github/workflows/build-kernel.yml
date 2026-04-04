@@ -22,17 +22,8 @@ jobs:
       - name: 📥 Checkout Source Code
         uses: actions/checkout@main
 
-      - name: 🛠️ Maximize Build Space & Swap
-        uses: easimon/maximize-build-space@master
-        with:
-          swap-size-mb: 4096
-          remove-dotnet: 'true'
-          remove-android: 'true'
-          remove-haskell: 'true'
-
       - name: 🧹 Aggressive Disk Cleanup
         run: |
-          set -e
           echo "[Before cleanup]"
           df -h
           sudo rm -rf /usr/local/share/boost \
@@ -58,7 +49,7 @@ jobs:
           sudo apt-get update -q
           sudo apt-get install -y --no-install-recommends \
             clang-22 lld-22 llvm-22 \
-            bc bison flex libssl-dev make gcc-aarch64-linux-gnu python3 ccache
+            bc bison flex libssl-dev libncurses-dev libelf-dev make gcc-aarch64-linux-gnu gcc-arm-linux-gnueabi python3 ccache
 
           sudo ln -sf /usr/lib/llvm-22/bin/* /usr/bin/
 
@@ -85,28 +76,43 @@ jobs:
           export CROSS_COMPILE_ARM32=arm-linux-gnueabi-
           export KBUILD_BUILD_USER="n_gxc"
           export KBUILD_BUILD_HOST="Github-Actions"
+          export CCACHE_DIR="$CCACHE_DIR"
 
           # Configure ccache max size
-          ccache -M 5G
+          ccache -M 2G
+          ccache -o compression=true
 
-          DEFCONFIG_FILE=$(find . -name "spes-perf_defconfig" | head -n 1)
-          echo "📍 Founded at: $DEFCONFIG_FILE"
+          # Reduce random toolchain pipe failures under high load
+          ulimit -n 65535
 
-          if [ -z "$DEFCONFIG_FILE" ]; then
-            echo "❌ Error: Not found spes-perf_defconfig file!"
+          TOTAL_MEM_GB=$(awk '/MemTotal/ {print int($2/1024/1024)}' /proc/meminfo)
+          CPU_CORES=$(nproc --all)
+          if [ "$TOTAL_MEM_GB" -le 8 ]; then
+            JOBS=$((CPU_CORES / 2))
+          elif [ "$TOTAL_MEM_GB" -le 12 ]; then
+            JOBS=$((CPU_CORES * 2 / 3))
+          else
+            JOBS=$CPU_CORES
+          fi
+          [ "$JOBS" -lt 1 ] && JOBS=1
+
+          DEFCONFIG="vendor/spes-perf_defconfig"
+          if [ ! -f "arch/arm64/configs/${DEFCONFIG}" ]; then
+            echo "❌ Error: Missing defconfig at arch/arm64/configs/${DEFCONFIG}"
             exit 1
           fi
 
-          sudo mkdir -p "$OUT_DIR"
-          sudo chown -R $USER:$USER "$OUT_DIR"
-
-          cp "$DEFCONFIG_FILE" "$OUT_DIR/.config"
-
-          make O="$OUT_DIR" LLVM=1 olddefconfig
-
-          make -j$(nproc --all) O="$OUT_DIR" LLVM=1 \
+          echo "Using defconfig: ${DEFCONFIG} | RAM: ${TOTAL_MEM_GB}G | CPU: ${CPU_CORES} | Jobs: ${JOBS}"
+          make O="$OUT_DIR" LLVM=1 KBUILD_DEFCONFIG="$DEFCONFIG" defconfig
+          if ! make -j"${JOBS}" O="$OUT_DIR" LLVM=1 \
                CC="ccache clang" \
-               Image.gz-dtb
+               Image.gz-dtb; then
+            RETRY_JOBS=$((JOBS > 2 ? JOBS - 2 : 1))
+            echo "Retrying with lower parallelism: ${RETRY_JOBS} jobs"
+            make -j"${RETRY_JOBS}" O="$OUT_DIR" LLVM=1 \
+                 CC="ccache clang" \
+                 Image.gz-dtb
+          fi
 
       - name: 📦 Package with AnyKernel3
         run: |
