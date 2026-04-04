@@ -29,6 +29,7 @@ jobs:
 
       - name: 🧹 Aggressive Disk Cleanup
         run: |
+          ls
           set -e
           echo "[Before cleanup]"
           df -h
