@@ -49,5 +49,5 @@ LINUXINCLUDE    += \
                 -I$(srctree)/techpack/camera/include
 obj-y += drivers/
 else
-$(info Target not found)
+# $(info Target not found)
 endif
