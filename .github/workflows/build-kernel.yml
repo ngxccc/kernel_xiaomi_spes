@@ -106,18 +106,25 @@ jobs:
           CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: |
           STATUS="${{ job.status == 'success' && '✅ SUCCESS' || '❌ FAILED' }}"
-          ZIP_NAME=$(ls *.zip || echo "None")
+          shopt -s nullglob
+          ZIP_FILES=(*.zip)
+          if [ ${#ZIP_FILES[@]} -gt 0 ]; then
+            ZIP_NAME="${ZIP_FILES[0]}"
+          else
+            ZIP_NAME="None"
+          fi
 
-          MESSAGE="🚀 *Kernel Build Report*
+          RUN_URL="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+          MESSAGE="🚀 <b>Kernel Build Report</b>
 
-          📌 *Status:* ${STATUS}
-          🏗️ *Compiler:* Clang ${CLANG_VERSION:-unknown}
-          📦 *Artifact:* \`${ZIP_NAME}\`
-          👤 *Built by:* @${GITHUB_ACTOR}
+          📌 <b>Status:</b> ${STATUS}
+          🏗️ <b>Compiler:</b> Clang ${CLANG_VERSION:-unknown}
+          📦 <b>Artifact:</b> <code>${ZIP_NAME}</code>
+          👤 <b>Built by:</b> ${GITHUB_ACTOR}
 
-          🔗 [Download & Logs]($GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID)"
+          🔗 <a href=\"${RUN_URL}\">Download &amp; Logs</a>"
 
-          curl -s -X POST "https://api.telegram.org/bot${BOT_TOKEN}/sendMessage" \
+          curl -sS -X POST "https://api.telegram.org/bot${BOT_TOKEN}/sendMessage" \
                -d chat_id="${CHAT_ID}" \
-               -d text="${MESSAGE}" \
-               -d parse_mode="Markdown"
+               -d parse_mode="HTML" \
+               --data-urlencode text="${MESSAGE}"
