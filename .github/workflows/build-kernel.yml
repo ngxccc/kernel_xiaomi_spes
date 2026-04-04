@@ -1,4 +1,4 @@
-name: 🚀 Build spes Kernel (Dynamic Clang) & Notify Telegram
+name: 🚀 Build spes Kernel & Notify Telegram
 
 on:
   push:
