@@ -1,36 +1,47 @@
 {
-    "name": "Android Kernel Development (spes)",
-    "image": "mcr.microsoft.com/devcontainers/base:ubuntu-22.04",
-    
+    "name": "🔥 Spes Kernel - LLVM Bleeding Edge",
+    "image": "mcr.microsoft.com/devcontainers/base:ubuntu-24.04",
+
     "features": {
-        "ghcr.io/devcontainers/features/common-utils:1": {
+        "ghcr.io/devcontainers/features/common-utils:2": {
             "installZsh": true,
             "configureZshAsDefaultShell": true
         }
     },
 
-    "postCreateCommand": "sudo apt-get update && sudo apt-get install -y bc bison build-essential flex git libssl-dev libncurses5-dev libelf-dev clang lld llvm ccache make bear python3",
+    // Dùng bash -c để chạy chuỗi lệnh phức tạp:
+    // 1. Cài các dependency bắt buộc cho Kernel & Script LLVM
+    // 2. Tải và chạy script LLVM (tự động lấy bản mới nhất, vd: 21/22)
+    // 3. Ép Symlink toàn bộ file nhị phân của LLVM (clang-2x) thành tên chuẩn (clang) để Kbuild không bị lú
+    "postCreateCommand": "sudo apt-get update && sudo apt-get install -y wget lsb-release software-properties-common gnupg bc bison flex libssl-dev libncurses-dev libelf-dev make gcc-aarch64-linux-gnu python3 ccache && wget https://apt.llvm.org/llvm.sh && chmod +x llvm.sh && sudo ./llvm.sh 22 && sudo ln -sf /usr/lib/llvm-*/bin/* /usr/bin/",
 
     "customizations": {
         "vscode": {
             "extensions": [
                 "llvm-vs-code-extensions.vscode-clangd",
-                "xaver.clang-format",               
                 "ms-vscode.cpptools-extension-pack",
-                "mhutchie.git-graph"               
+                "ms-vscode.makefile-tools",
+                "mhutchie.git-graph"
             ],
             "settings": {
+                // Cấu hình lại Clangd chuẩn chỉ cho Kernel
                 "clangd.arguments": [
-                    "--compile-commands-dir=out",    
+                    // Tìm compile_commands.json ở thư mục gốc (nơi bro chạy make)
+                    "--compile-commands-dir=${workspaceFolder}",
                     "--background-index",
                     "--clang-tidy",
                     "--completion-style=detailed",
-                    "--header-insertion=never"
+                    "--header-insertion=never",
+                    // Ép Clangd chạy đa luồng để scan source code nhanh hơn
+                    "-j=4"
                 ],
-                "C_Cpp.intelliSenseEngine": "disabled"
+                // Tắt IntelliSense cùi bắp của Microsoft để nhường sân khấu cho Clangd
+                "C_Cpp.intelliSenseEngine": "disabled",
+                // Mở terminal lên là ZSH cho ngầu
+                "terminal.integrated.defaultProfile.linux": "zsh"
             }
         }
     },
-  
+
     "remoteUser": "vscode"
 }
