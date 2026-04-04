@@ -21,7 +21,6 @@
 #include <linux/mfd/max77729-private.h>
 #include <linux/regulator/machine.h>
 #include <linux/pm_wakeup.h>
-#include "linux/mfd/max77729_common.h"
 #include <linux/pmic-voter.h>
 
 enum sec_otg_attrs {

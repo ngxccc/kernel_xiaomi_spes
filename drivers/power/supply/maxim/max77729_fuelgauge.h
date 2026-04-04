@@ -27,7 +27,7 @@
  * R/W bit should NOT be included.
  */
 
-#define PRINT_COUNT	10
+#define PRINT_COUNT 10
 
 #define ALERT_EN 0x04
 #define CAPACITY_SCALE_DEFAULT_CURRENT 1000
@@ -52,24 +52,24 @@ enum {
 };
 
 ssize_t max77729_fg_show_attrs(struct device *dev,
-				struct device_attribute *attr, char *buf);
+			       struct device_attribute *attr, char *buf);
 
 ssize_t max77729_fg_store_attrs(struct device *dev,
-				struct device_attribute *attr,
-				const char *buf, size_t count);
+				struct device_attribute *attr, const char *buf,
+				size_t count);
 
-#define MAX77729_FG_ATTR(_name)				\
-{							\
-	.attr = {.name = #_name, .mode = 0660},	\
-	.show = max77729_fg_show_attrs,			\
-	.store = max77729_fg_store_attrs,			\
-}
+#define MAX77729_FG_ATTR(_name)                                                \
+	{                                                                      \
+		.attr = { .name = #_name, .mode = 0660 },                      \
+		.show = max77729_fg_show_attrs,                                \
+		.store = max77729_fg_store_attrs,                              \
+	}
 
 struct sec_fg_info {
 	/* test print count */
 	int pr_cnt;
 	/* full charge comp */
-	struct delayed_work	full_comp_work;
+	struct delayed_work full_comp_work;
 
 	/* battery info */
 	u32 soc;
@@ -111,14 +111,9 @@ enum {
 	NEGATIVE,
 };
 
-enum {
-	RANGE = 0,
-	SLOPE,
-	OFFSET,
-	TABLE_MAX
-};
+enum { RANGE = 0, SLOPE, OFFSET, TABLE_MAX };
 
-#define CURRENT_RANGE_MAX_NUM	5
+#define CURRENT_RANGE_MAX_NUM 5
 
 struct battery_data_t {
 	u8 battery_id;
@@ -128,7 +123,7 @@ struct battery_data_t {
 	u32 sw_v_empty_vol_cisd;
 	u32 sw_v_empty_recover_vol;
 	u32 Capacity;
-	u8  *type_str;
+	u8 *type_str;
 	u32 ichgterm;
 	u32 misccfg;
 	u32 fullsocthr;
@@ -138,19 +133,19 @@ struct battery_data_t {
 };
 
 /* FullCap learning setting */
-#define VFFULLCAP_CHECK_INTERVAL	300 /* sec */
+#define VFFULLCAP_CHECK_INTERVAL 300 /* sec */
 /* soc should be 0.1% unit */
-#define VFSOC_FOR_FULLCAP_LEARNING	950
-#define LOW_CURRENT_FOR_FULLCAP_LEARNING	20
-#define HIGH_CURRENT_FOR_FULLCAP_LEARNING	120
-#define LOW_AVGCURRENT_FOR_FULLCAP_LEARNING	20
-#define HIGH_AVGCURRENT_FOR_FULLCAP_LEARNING	100
+#define VFSOC_FOR_FULLCAP_LEARNING 950
+#define LOW_CURRENT_FOR_FULLCAP_LEARNING 20
+#define HIGH_CURRENT_FOR_FULLCAP_LEARNING 120
+#define LOW_AVGCURRENT_FOR_FULLCAP_LEARNING 20
+#define HIGH_AVGCURRENT_FOR_FULLCAP_LEARNING 100
 
 /* power off margin */
 /* soc should be 0.1% unit */
-#define POWER_OFF_SOC_HIGH_MARGIN	20
-#define POWER_OFF_VOLTAGE_HIGH_MARGIN	3500
-#define POWER_OFF_VOLTAGE_LOW_MARGIN	3400
+#define POWER_OFF_SOC_HIGH_MARGIN 20
+#define POWER_OFF_VOLTAGE_HIGH_MARGIN 3500
+#define POWER_OFF_VOLTAGE_LOW_MARGIN 3400
 
 #define LEARNING_QRTABLE 0x0001
 
@@ -185,8 +180,8 @@ typedef struct max77729_fuelgauge_platform_data {
 #endif
 } max77729_fuelgauge_platform_data_t;
 
-#define FG_RESET_DATA_COUNT		5
-#define FG_MODEL_DATA_COUNT		48
+#define FG_RESET_DATA_COUNT 5
+#define FG_MODEL_DATA_COUNT 48
 
 struct verify_reg {
 	u16 addr;
@@ -219,14 +214,14 @@ struct lost_soc_data {
 };
 
 struct max77729_fuelgauge_data {
-	struct device           *dev;
-	struct i2c_client       *i2c;
-	struct i2c_client       *pmic;
-	struct mutex            fuelgauge_mutex;
+	struct device *dev;
+	struct i2c_client *i2c;
+	struct i2c_client *pmic;
+	struct mutex fuelgauge_mutex;
 	struct max77729_platform_data *max77729_pdata;
 	max77729_fuelgauge_platform_data_t *pdata;
-	struct power_supply	      *psy_fg;
-	struct power_supply	      *psy_batt;
+	struct power_supply *psy_fg;
+	struct power_supply *psy_batt;
 	struct delayed_work isr_work;
 	struct delayed_work shutdown_delay_work;
 
@@ -240,15 +235,15 @@ struct max77729_fuelgauge_data {
 	 * used in individual fuel gauge file only
 	 * (ex. dummy_fuelgauge.c)
 	 */
-	struct sec_fg_info	info;
-	struct battery_data_t        *battery_data;
+	struct sec_fg_info info;
+	struct battery_data_t *battery_data;
 
 	bool is_fuel_alerted;
 	struct wakeup_source *fuel_alert_ws;
 
-	unsigned int capacity_old;	/* only for atomic calculation */
-	unsigned int capacity_max;	/* only for dynamic calculation */
-	unsigned int g_capacity_max;	/* only for dynamic calculation */
+	unsigned int capacity_old; /* only for atomic calculation */
+	unsigned int capacity_max; /* only for dynamic calculation */
+	unsigned int g_capacity_max; /* only for dynamic calculation */
 	unsigned int standard_capacity;
 
 	bool capacity_max_conv;
@@ -283,12 +278,11 @@ struct max77729_fuelgauge_data {
 	struct verify_reg *verify_selected_reg;
 	unsigned int verify_selected_reg_length;
 	u32 data_ver;
-	u32* fg_model_data;
+	u32 *fg_model_data;
 	bool skip_fg_verify;
 	int fake_temp;
 	int *dec_rate_seq;
 	int dec_rate_len;
-
 
 #ifdef CONFIG_BATT_VERIFY_BY_DS28E16
 	struct power_supply *max_verify_psy;
