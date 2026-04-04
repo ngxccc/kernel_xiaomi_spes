@@ -11,3 +11,14 @@ config ONEWIRE_GPIO
 	default n
 	help
 		It's an onewire driver.
+
+config XIAOMI_BATT_AUTH_BYPASS
+  bool "Bypass Xiaomi DS28E16 Battery Authentication"
+  default n
+  help
+    Enable this option to bypass the cryptographic SHA384 check
+    for Xiaomi batteries. This will force the kernel to treat ANY
+    plugged-in battery as an authentic OEM battery.
+
+    WARNING: Useful for aftermarket batteries to regain Fast Charge,
+    but bypasses safety checks! Proceed at your own risk.

@@ -837,6 +837,21 @@ int AuthenticateDS28E16(int anon, int bdconst, int S_Secret_PageNum,
 			int PageNum, unsigned char *Challenge,
 			unsigned char *Secret_Seeds, unsigned char *S_Secret)
 {
+#ifdef CONFIG_XIAOMI_BATT_AUTH_BYPASS
+    /*
+     * [MOD] Xiaomi Battery Secret Bypass
+     * Force authentic status to bypass hardware crypto checks and unlock fast charging.
+     * Perfect for aftermarket batteries! 😎
+     */
+    mi_auth_result = DS_TRUE;
+    flag_mi_auth_result = 1;
+
+    // Print to kernel log (dmesg) to verify the bypass is active
+    ds_err("[RAIZO_MOD] Bypassed DS28E16 Battery Authentication! Fast Charge UNLOCKED 🚀\n");
+
+    // Early return, skipping all the SHA384 HMAC operations below
+    return DS_TRUE;
+#else
 	unsigned char PageData[32], MAC_Read_Value[32], CAL_MAC[32];
 	unsigned char status_chip[16];
 	unsigned char MAC_Computer_Datainput[128];
@@ -1043,6 +1058,7 @@ int AuthenticateDS28E16(int anon, int bdconst, int S_Secret_PageNum,
 		mi_auth_result = DS_TRUE;
 		return DS_TRUE;
 	}
+#endif /* CONFIG_XIAOMI_BATT_AUTH_BYPASS */
 }
 
 // retry interface start //
