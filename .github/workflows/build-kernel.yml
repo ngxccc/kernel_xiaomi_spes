@@ -44,19 +44,19 @@ jobs:
           echo "[After cleanup]"
           df -h
 
-      - name: ⚙️ Install LLVM 22 & Dependencies
+      - name: ⚡ Fast Install LLVM 22
         run: |
-          sudo apt-get update
-          # Install essential build dependencies
-          sudo apt-get install -y wget lsb-release software-properties-common gnupg bc bison flex \
-          libssl-dev libncurses-dev libelf-dev make gcc-aarch64-linux-gnu gcc-arm-linux-gnueabi python3 ccache
+          wget -qO- https://apt.llvm.org/llvm-snapshot.gpg.key | sudo tee /etc/apt/trusted.gpg.d/apt.llvm.org.asc
 
-          # Fetch the official LLVM installation script
-          wget https://apt.llvm.org/llvm.sh
-          chmod +x llvm.sh
-          sudo ./llvm.sh 22
+          echo "deb http://apt.llvm.org/noble/ llvm-toolchain-noble-22 main" | sudo tee /etc/apt/sources.list.d/llvm.list
 
-          # Force symlink so Kbuild detects 'clang', 'ld.lld', etc., instead of versioned names
+          sudo bash -c 'echo "Acquire::Queue-Mode \"access\"; Acquire::Retries \"3\"; APT::Color \"1\"; Acquire::Languages \"none\";" > /etc/apt/apt.conf.d/99parallel'
+
+          sudo apt-get update -q
+          sudo apt-get install -y --no-install-recommends \
+            clang-22 lld-22 llvm-22 \
+            bc bison flex libssl-dev make gcc-aarch64-linux-gnu python3 ccache
+
           sudo ln -sf /usr/lib/llvm-22/bin/* /usr/bin/
 
       - name: 🧠 Setup Ccache
