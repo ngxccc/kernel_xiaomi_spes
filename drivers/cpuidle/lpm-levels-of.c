@@ -30,16 +30,16 @@ struct lpm_type_str {
 };
 
 static const struct lpm_type_str lpm_types[] = {
-	{IDLE, "idle_enabled"},
-	{SUSPEND, "suspend_enabled"},
-	{LATENCY, "exit_latency_us"},
+	{ IDLE, "idle_enabled" },
+	{ SUSPEND, "suspend_enabled" },
+	{ LATENCY, "exit_latency_us" },
 };
 
 static struct lpm_level_avail *cpu_level_available[NR_CPUS];
 static struct platform_device *lpm_pdev;
 
-static int lpm_of_read_u32(struct device_node *dn, const char *key,
-					u32 *val, bool is_err)
+static int lpm_of_read_u32(struct device_node *dn, const char *key, u32 *val,
+			   bool is_err)
 {
 	int ret;
 
@@ -51,41 +51,41 @@ static int lpm_of_read_u32(struct device_node *dn, const char *key,
 }
 
 static void *get_enabled_ptr(struct kobj_attribute *attr,
-					struct lpm_level_avail *avail)
+			     struct lpm_level_avail *avail)
 {
 	void *arg = NULL;
 
 	if (!strcmp(attr->attr.name, lpm_types[IDLE].str))
-		arg = (void *) &avail->idle_enabled;
+		arg = (void *)&avail->idle_enabled;
 	else if (!strcmp(attr->attr.name, lpm_types[SUSPEND].str))
-		arg = (void *) &avail->suspend_enabled;
+		arg = (void *)&avail->suspend_enabled;
 
 	return arg;
 }
 
 static struct lpm_level_avail *get_avail_ptr(struct kobject *kobj,
-					struct kobj_attribute *attr)
+					     struct kobj_attribute *attr)
 {
 	struct lpm_level_avail *avail = NULL;
 
 	if (!strcmp(attr->attr.name, lpm_types[IDLE].str))
 		avail = container_of(attr, struct lpm_level_avail,
-					idle_enabled_attr);
+				     idle_enabled_attr);
 	else if (!strcmp(attr->attr.name, lpm_types[SUSPEND].str))
 		avail = container_of(attr, struct lpm_level_avail,
-					suspend_enabled_attr);
+				     suspend_enabled_attr);
 	else if (!strcmp(attr->attr.name, lpm_types[LATENCY].str))
 		avail = container_of(attr, struct lpm_level_avail,
-					latency_attr);
+				     latency_attr);
 
 	return avail;
 }
 
 static ssize_t lpm_latency_show(struct kobject *kobj,
-		struct kobj_attribute *attr, char *buf)
+				struct kobj_attribute *attr, char *buf)
 {
 	int ret = 0;
-	struct kernel_param kp;
+	struct kernel_param kp = {};
 	struct lpm_level_avail *avail = get_avail_ptr(kobj, attr);
 
 	if (WARN_ON(!avail))
@@ -103,10 +103,10 @@ static ssize_t lpm_latency_show(struct kobject *kobj,
 }
 
 ssize_t lpm_enable_show(struct kobject *kobj, struct kobj_attribute *attr,
-				char *buf)
+			char *buf)
 {
 	int ret = 0;
-	struct kernel_param kp;
+	struct kernel_param kp = {};
 	struct lpm_level_avail *avail = get_avail_ptr(kobj, attr);
 
 	if (WARN_ON(!avail))
@@ -126,10 +126,10 @@ ssize_t lpm_enable_show(struct kobject *kobj, struct kobj_attribute *attr,
 }
 
 ssize_t lpm_enable_store(struct kobject *kobj, struct kobj_attribute *attr,
-				const char *buf, size_t len)
+			 const char *buf, size_t len)
 {
 	int ret = 0;
-	struct kernel_param kp;
+	struct kernel_param kp = {};
 	struct lpm_level_avail *avail;
 
 	avail = get_avail_ptr(kobj, attr);
@@ -142,9 +142,9 @@ ssize_t lpm_enable_store(struct kobject *kobj, struct kobj_attribute *attr,
 	return ret ? ret : len;
 }
 
-static int create_lvl_avail_nodes(const char *name,
-			struct kobject *parent, struct lpm_level_avail *avail,
-			void *data, int index, bool cpu_node)
+static int create_lvl_avail_nodes(const char *name, struct kobject *parent,
+				  struct lpm_level_avail *avail, void *data,
+				  int index, bool cpu_node)
 {
 	struct attribute_group *attr_group = NULL;
 	struct attribute **attr = NULL;
@@ -217,7 +217,7 @@ static int create_cpu_lvl_nodes(struct lpm_cluster *p, struct kobject *parent)
 	int i, cpu_idx;
 	struct kobject **cpu_kobj = NULL;
 	struct lpm_level_avail *level_list = NULL;
-	char cpu_name[20] = {0};
+	char cpu_name[20] = { 0 };
 	int ret = 0;
 	struct list_head *pos;
 
@@ -227,22 +227,21 @@ static int create_cpu_lvl_nodes(struct lpm_cluster *p, struct kobject *parent)
 		return -ENOMEM;
 
 	cpu_idx = 0;
-	list_for_each(pos, &p->cpu) {
+	list_for_each (pos, &p->cpu) {
 		struct lpm_cpu *lpm_cpu = list_entry(pos, struct lpm_cpu, list);
 
-		for_each_cpu(cpu, &lpm_cpu->related_cpus) {
+		for_each_cpu (cpu, &lpm_cpu->related_cpus) {
 			snprintf(cpu_name, sizeof(cpu_name), "cpu%d", cpu);
-			cpu_kobj[cpu_idx] = kobject_create_and_add(cpu_name,
-					parent);
+			cpu_kobj[cpu_idx] =
+				kobject_create_and_add(cpu_name, parent);
 			if (!cpu_kobj[cpu_idx]) {
 				ret = -ENOMEM;
 				goto release_kobj;
 			}
 
-			level_list = devm_kcalloc(&lpm_pdev->dev,
-						  lpm_cpu->nlevels,
-						  sizeof(*level_list),
-						  GFP_KERNEL);
+			level_list =
+				devm_kcalloc(&lpm_pdev->dev, lpm_cpu->nlevels,
+					     sizeof(*level_list), GFP_KERNEL);
 			if (!level_list) {
 				ret = -ENOMEM;
 				goto release_kobj;
@@ -256,10 +255,9 @@ static int create_cpu_lvl_nodes(struct lpm_cluster *p, struct kobject *parent)
 				level_list[i].exit_latency =
 					p->levels[i].pwr.exit_latency;
 				ret = create_lvl_avail_nodes(
-						lpm_cpu->levels[i].name,
-						cpu_kobj[cpu_idx],
-						&level_list[i],
-						(void *)lpm_cpu, cpu, true);
+					lpm_cpu->levels[i].name,
+					cpu_kobj[cpu_idx], &level_list[i],
+					(void *)lpm_cpu, cpu, true);
 				if (ret)
 					goto release_kobj;
 			}
@@ -294,15 +292,16 @@ int create_cluster_lvl_nodes(struct lpm_cluster *p, struct kobject *kobj)
 
 	for (i = 0; i < p->nlevels; i++) {
 		p->levels[i].available.exit_latency =
-					p->levels[i].pwr.exit_latency;
+			p->levels[i].pwr.exit_latency;
 		ret = create_lvl_avail_nodes(p->levels[i].level_name,
-				cluster_kobj, &p->levels[i].available,
-				(void *)p, 0, false);
+					     cluster_kobj,
+					     &p->levels[i].available, (void *)p,
+					     0, false);
 		if (ret)
 			return ret;
 	}
 
-	list_for_each_entry(child, &p->child, list) {
+	list_for_each_entry (child, &p->child, list) {
 		ret = create_cluster_lvl_nodes(child, cluster_kobj);
 		if (ret)
 			return ret;
@@ -314,8 +313,7 @@ int create_cluster_lvl_nodes(struct lpm_cluster *p, struct kobject *kobj)
 	return ret;
 }
 
-int lpm_cpu_mode_allow(unsigned int cpu,
-		unsigned int index, bool from_idle)
+int lpm_cpu_mode_allow(unsigned int cpu, unsigned int index, bool from_idle)
 {
 	struct lpm_level_avail *avail = cpu_level_available[cpu];
 
@@ -326,19 +324,18 @@ int lpm_cpu_mode_allow(unsigned int cpu,
 		return !from_idle;
 
 	return !!(from_idle ? avail[index].idle_enabled :
-				avail[index].suspend_enabled);
+			      avail[index].suspend_enabled);
 }
 
-bool lpm_cluster_mode_allow(struct lpm_cluster *cluster,
-		unsigned int mode, bool from_idle)
+bool lpm_cluster_mode_allow(struct lpm_cluster *cluster, unsigned int mode,
+			    bool from_idle)
 {
 	struct lpm_level_avail *avail = &cluster->levels[mode].available;
 
 	if (!lpm_pdev || !avail)
 		return false;
 
-	return !!(from_idle ? avail->idle_enabled :
-				avail->suspend_enabled);
+	return !!(from_idle ? avail->idle_enabled : avail->suspend_enabled);
 }
 
 static int parse_cluster_params(struct device_node *dn, struct lpm_cluster *c)
@@ -351,24 +348,24 @@ static int parse_cluster_params(struct device_node *dn, struct lpm_cluster *c)
 		return ret;
 	}
 
-	ret = lpm_of_read_u32(dn, "qcom,psci-mode-shift",
-			      &c->psci_mode_shift, true);
+	ret = lpm_of_read_u32(dn, "qcom,psci-mode-shift", &c->psci_mode_shift,
+			      true);
 	if (ret)
 		return ret;
 
-	ret = lpm_of_read_u32(dn, "qcom,psci-mode-mask",
-			      &c->psci_mode_mask, true);
+	ret = lpm_of_read_u32(dn, "qcom,psci-mode-mask", &c->psci_mode_mask,
+			      true);
 	if (ret)
 		return ret;
 
-	c->lpm_prediction = !(of_property_read_bool(dn,
-						    "qcom,disable-prediction"));
+	c->lpm_prediction =
+		!(of_property_read_bool(dn, "qcom,disable-prediction"));
 
 	if (c->lpm_prediction) {
 		ret = lpm_of_read_u32(dn, "qcom,clstr-tmr-add", &c->tmr_add,
 				      false);
 		if (ret || c->tmr_add < TIMER_ADD_LOW ||
-					c->tmr_add > TIMER_ADD_HIGH) {
+		    c->tmr_add > TIMER_ADD_HIGH) {
 			c->tmr_add = DEFAULT_TIMER_ADD;
 			ret = 0;
 		}
@@ -384,18 +381,18 @@ static int parse_power_params(struct device_node *dn, struct power_params *pwr)
 {
 	int ret;
 
-	ret  = lpm_of_read_u32(dn, "qcom,entry-latency-us",
-			       &pwr->entry_latency, true);
+	ret = lpm_of_read_u32(dn, "qcom,entry-latency-us", &pwr->entry_latency,
+			      true);
 	if (ret)
 		return ret;
 
-	ret  = lpm_of_read_u32(dn, "qcom,exit-latency-us",
-			       &pwr->exit_latency, true);
+	ret = lpm_of_read_u32(dn, "qcom,exit-latency-us", &pwr->exit_latency,
+			      true);
 	if (ret)
 		return ret;
 
-	ret = lpm_of_read_u32(dn, "qcom,min-residency-us",
-			      &pwr->min_residency, true);
+	ret = lpm_of_read_u32(dn, "qcom,min-residency-us", &pwr->min_residency,
+			      true);
 
 	return ret;
 }
@@ -436,8 +433,8 @@ static int parse_cluster_level(struct device_node *dn,
 		return ret;
 	}
 
-	ret = lpm_of_read_u32(dn, "qcom,reset-level",
-			      &level->reset_level, false);
+	ret = lpm_of_read_u32(dn, "qcom,reset-level", &level->reset_level,
+			      false);
 	if (ret == -EINVAL)
 		level->reset_level = LPM_RESET_LVL_NONE;
 	else if (ret)
@@ -470,7 +467,7 @@ static int get_cpumask_for_node(struct device_node *node, struct cpumask *mask)
 	cpu_node = of_parse_phandle(node, "qcom,cpu", idx++);
 	if (!cpu_node) {
 		pr_info("%s: No CPU phandle, assuming single cluster\n",
-				node->full_name);
+			node->full_name);
 		/*
 		 * Not all targets have the cpu node populated in the device
 		 * tree. If cpu node is not populated assume all possible
@@ -481,7 +478,7 @@ static int get_cpumask_for_node(struct device_node *node, struct cpumask *mask)
 	}
 
 	while (cpu_node) {
-		for_each_possible_cpu(cpu) {
+		for_each_possible_cpu (cpu) {
 			if (of_get_cpu_node(cpu, NULL) == cpu_node) {
 				cpumask_set_cpu(cpu, mask);
 				break;
@@ -496,11 +493,10 @@ static int get_cpumask_for_node(struct device_node *node, struct cpumask *mask)
 
 static int parse_cpu(struct device_node *node, struct lpm_cpu *cpu)
 {
-
 	struct device_node *n;
 	int ret, i;
 
-	for_each_child_of_node(node, n) {
+	for_each_child_of_node (node, n) {
 		struct lpm_cpu_level *l = &cpu->levels[cpu->nlevels];
 
 		cpu->nlevels++;
@@ -517,13 +513,13 @@ static int parse_cpu(struct device_node *node, struct lpm_cpu *cpu)
 			return ret;
 		}
 
-		l->use_bc_timer = of_property_read_bool(n,
-					"qcom,use-broadcast-timer");
+		l->use_bc_timer =
+			of_property_read_bool(n, "qcom,use-broadcast-timer");
 
 		l->is_reset = of_property_read_bool(n, "qcom,is-reset");
 
 		ret = lpm_of_read_u32(n, "qcom,reset-level", &l->reset_level,
-								false);
+				      false);
 		of_node_put(n);
 
 		if (ret == -EINVAL)
@@ -533,10 +529,10 @@ static int parse_cpu(struct device_node *node, struct lpm_cpu *cpu)
 	}
 
 	for (i = 1; i < cpu->nlevels; i++)
-		cpu->levels[i-1].pwr.max_residency =
+		cpu->levels[i - 1].pwr.max_residency =
 			cpu->levels[i].pwr.min_residency - 1;
 
-	cpu->levels[i-1].pwr.max_residency = UINT_MAX;
+	cpu->levels[i - 1].pwr.max_residency = UINT_MAX;
 
 	return 0;
 }
@@ -555,39 +551,38 @@ static int parse_cpu_levels(struct device_node *dn, struct lpm_cluster *c)
 
 	cpu->parent = c;
 
-	ret = lpm_of_read_u32(dn, "qcom,psci-mode-shift",
-			      &cpu->psci_mode_shift, true);
+	ret = lpm_of_read_u32(dn, "qcom,psci-mode-shift", &cpu->psci_mode_shift,
+			      true);
 	if (ret)
 		return ret;
 
-	ret = lpm_of_read_u32(dn, "qcom,psci-mode-mask",
-			      &cpu->psci_mode_mask, true);
+	ret = lpm_of_read_u32(dn, "qcom,psci-mode-mask", &cpu->psci_mode_mask,
+			      true);
 	if (ret)
 		return ret;
 
-	cpu->ipi_prediction = !(of_property_read_bool(dn,
-					"qcom,disable-ipi-prediction"));
+	cpu->ipi_prediction =
+		!(of_property_read_bool(dn, "qcom,disable-ipi-prediction"));
 
-	cpu->lpm_prediction = !(of_property_read_bool(dn,
-					"qcom,disable-prediction"));
+	cpu->lpm_prediction =
+		!(of_property_read_bool(dn, "qcom,disable-prediction"));
 
 	if (cpu->lpm_prediction) {
-		ret = lpm_of_read_u32(dn, "qcom,ref-stddev",
-				      &cpu->ref_stddev, false);
+		ret = lpm_of_read_u32(dn, "qcom,ref-stddev", &cpu->ref_stddev,
+				      false);
 		if (ret || cpu->ref_stddev < STDDEV_LOW ||
-					cpu->ref_stddev > STDDEV_HIGH)
+		    cpu->ref_stddev > STDDEV_HIGH)
 			cpu->ref_stddev = DEFAULT_STDDEV;
 
-		ret = lpm_of_read_u32(dn, "qcom,tmr-add",
-				      &cpu->tmr_add, false);
+		ret = lpm_of_read_u32(dn, "qcom,tmr-add", &cpu->tmr_add, false);
 		if (ret || cpu->tmr_add < TIMER_ADD_LOW ||
-					cpu->tmr_add > TIMER_ADD_HIGH)
+		    cpu->tmr_add > TIMER_ADD_HIGH)
 			cpu->tmr_add = DEFAULT_TIMER_ADD;
 
 		ret = lpm_of_read_u32(dn, "qcom,ref-premature-cnt",
 				      &cpu->ref_premature_cnt, false);
 		if (ret || cpu->ref_premature_cnt < PREMATURE_CNT_LOW ||
-				cpu->ref_premature_cnt > PREMATURE_CNT_HIGH)
+		    cpu->ref_premature_cnt > PREMATURE_CNT_HIGH)
 			cpu->ref_premature_cnt = DEFAULT_PREMATURE_CNT;
 	}
 
@@ -608,12 +603,12 @@ void free_cluster_node(struct lpm_cluster *cluster)
 	struct lpm_cpu *cpu, *n;
 	struct lpm_cluster *cl, *m;
 
-	list_for_each_entry_safe(cl, m, &cluster->child, list) {
+	list_for_each_entry_safe (cl, m, &cluster->child, list) {
 		list_del(&cl->list);
 		free_cluster_node(cl);
 	}
 
-	list_for_each_entry_safe(cpu, n, &cluster->cpu, list)
+	list_for_each_entry_safe (cpu, n, &cluster->cpu, list)
 		list_del(&cpu->list);
 }
 
@@ -645,7 +640,7 @@ struct lpm_cluster *parse_cluster(struct device_node *node,
 	spin_lock_init(&c->sync_lock);
 	c->min_child_level = NR_LPM_LEVELS;
 
-	for_each_child_of_node(node, n) {
+	for_each_child_of_node (node, n) {
 		if (!n->name) {
 			of_node_put(n);
 			continue;
@@ -667,7 +662,7 @@ struct lpm_cluster *parse_cluster(struct device_node *node,
 
 			list_add(&child->list, &c->child);
 			cpumask_or(&c->child_cpus, &c->child_cpus,
-					&child->child_cpus);
+				   &child->child_cpus);
 			c->aff_level = child->aff_level + 1;
 		} else if (!of_node_cmp(n->name, "qcom,pm-cpu")) {
 			if (parse_cpu_levels(n, c)) {
@@ -684,13 +679,13 @@ struct lpm_cluster *parse_cluster(struct device_node *node,
 	if (cpumask_intersects(&c->child_cpus, cpu_online_mask))
 		c->last_level = c->default_level;
 	else
-		c->last_level = c->nlevels-1;
+		c->last_level = c->nlevels - 1;
 
 	for (i = 1; i < c->nlevels; i++)
-		c->levels[i-1].pwr.max_residency =
+		c->levels[i - 1].pwr.max_residency =
 			c->levels[i].pwr.min_residency - 1;
 
-	c->levels[i-1].pwr.max_residency = UINT_MAX;
+	c->levels[i - 1].pwr.max_residency = UINT_MAX;
 
 	return c;
 
@@ -725,30 +720,30 @@ void cluster_dt_walkthrough(struct lpm_cluster *cluster)
 	struct lpm_cpu *cpu;
 	int i, j;
 	static int id;
-	char str[10] = {0};
+	char str[10] = { 0 };
 
 	if (!cluster)
 		return;
 
 	for (i = 0; i < id; i++)
-		snprintf(str+i, 10 - i, "\t");
+		snprintf(str + i, 10 - i, "\t");
 
 	for (i = 0; i < cluster->nlevels; i++) {
 		struct lpm_cluster_level *l = &cluster->levels[i];
 
 		pr_info("cluster: %s \t level: %s\n", cluster->cluster_name,
-							l->level_name);
+			l->level_name);
 	}
 
-	list_for_each_entry(cpu, &cluster->cpu, list) {
+	list_for_each_entry (cpu, &cluster->cpu, list) {
 		for (j = 0; j < cpu->nlevels; j++)
 			pr_info("%s\tCPU level name: %s\n", str,
-						cpu->levels[j].name);
+				cpu->levels[j].name);
 	}
 
 	id++;
 
-	list_for_each(list, &cluster->child) {
+	list_for_each (list, &cluster->child) {
 		struct lpm_cluster *n;
 
 		n = list_entry(list, typeof(*n), list);
