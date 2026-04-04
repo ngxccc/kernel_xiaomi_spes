@@ -76,16 +76,34 @@ jobs:
 
           ./scripts/build_kernel.sh clean
 
+      - name: 🧩 Pack DTBO.img
+        run: |
+          DTBO_DIR="$OUT_DIR/arch/arm64/boot/dts/vendor/qcom"
+
+          mkdir -p "$OUT_DIR/dtbo_out"
+
+          # This command collects all files with "spes" in the name and packs them into dtbo.img
+          python3 scripts/mkdtboimg.py create "$OUT_DIR/dtbo_out/dtbo.img" $DTBO_DIR/spes*.dtbo
+
+          echo "✅ Successfully packed dtbo.img!"
+          ls -lh "$OUT_DIR/dtbo_out/dtbo.img"
+
       - name: 📦 Package with AnyKernel3
         run: |
           git clone --depth=1 https://github.com/osm0sis/AnyKernel3.git AnyKernel3
           rm -rf AnyKernel3/.git AnyKernel3/README.md
 
-          if [ -f "$OUT_DIR/arch/arm64/boot/Image.gz-dtb" ]; then
-            cp "$OUT_DIR/arch/arm64/boot/Image.gz-dtb" AnyKernel3/
+          if [ -f "$OUT_DIR/arch/arm64/boot/Image.gz" ]; then
+            cp "$OUT_DIR/arch/arm64/boot/Image.gz" AnyKernel3/
           else
-            echo "❌ Error: Not found Image.gz-dtb after build!"
-            exit 1
+            echo "❌ Error: Not found Image.gz!" && exit 1
+          fi
+
+          if [ -f "$OUT_DIR/dtbo_out/dtbo.img" ]; then
+            cp "$OUT_DIR/dtbo_out/dtbo.img" AnyKernel3/
+            echo "✅ Successfully copied dtbo.img into AnyKernel3"
+          else
+            echo "❌ Error: dtbo.img packing failed!" && exit 1
           fi
 
           cat << 'EOF' > AnyKernel3/anykernel.sh
@@ -103,17 +121,20 @@ jobs:
           supported.patchlevels=
           '; } # end properties
 
-          # Thiết lập cấu trúc phân vùng chuẩn cho Xiaomi spes (A/B Slot)
+          # Set up the standard partition layout for Xiaomi spes (A/B slot)
           block=boot;
           is_slot_device=1;
           ramdisk_compression=auto;
           patch_vbmeta_flag=auto;
 
-          # Nạp thư viện lõi của AK3
+          # Load the AK3 core library
           . tools/ak3-core.sh;
 
           dump_boot;
           write_boot;
+
+          # This command will automatically find dtbo.img in the zip and flash it to the dtbo partition
+          flash_dtbo;
           EOF
 
           cd AnyKernel3

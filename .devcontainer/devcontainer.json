@@ -22,7 +22,8 @@
                 "llvm-vs-code-extensions.vscode-clangd",
                 "ms-vscode.cpptools-extension-pack",
                 "ms-vscode.makefile-tools",
-                "mhutchie.git-graph"
+                "mhutchie.git-graph",
+                "ms-python.python"
             ],
             "settings": {
                 // Reconfigure Clangd specifically for Kernel development
