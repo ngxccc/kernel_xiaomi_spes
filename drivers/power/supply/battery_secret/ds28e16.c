@@ -89,6 +89,15 @@ unsigned char mi_page1_data[16] = { 0x00 };
 unsigned char mi_counter[16] = { 0x00 };
 int mi_auth_result;
 
+/* Retry helpers are local to this translation unit. */
+static int ds28el16_Read_RomID_retry(unsigned char *RomID);
+static int ds28el16_get_page_status_retry(unsigned char *data);
+static int ds28el16_get_page_data_retry(int page, unsigned char *data);
+static int DS28E16_cmd_computeS_Secret_retry(int anon, int bdconst, int pg,
+					     unsigned char *partial);
+static int DS28E16_cmd_computeReadPageAuthentication_retry(
+	int anon, int pg, unsigned char *challenge, unsigned char *hmac);
+
 unsigned char crc_low_first(unsigned char *ptr, unsigned char len)
 {
 	unsigned char i;
@@ -838,19 +847,19 @@ int AuthenticateDS28E16(int anon, int bdconst, int S_Secret_PageNum,
 			unsigned char *Secret_Seeds, unsigned char *S_Secret)
 {
 #ifdef CONFIG_XIAOMI_BATT_AUTH_BYPASS
-    /*
+	/*
      * [MOD] Xiaomi Battery Secret Bypass
      * Force authentic status to bypass hardware crypto checks and unlock fast charging.
      * Perfect for aftermarket batteries! 😎
      */
-    mi_auth_result = DS_TRUE;
-    flag_mi_auth_result = 1;
+	mi_auth_result = DS_TRUE;
+	flag_mi_auth_result = 1;
 
-    // Print to kernel log (dmesg) to verify the bypass is active
-    ds_err("[RAIZO_MOD] Bypassed DS28E16 Battery Authentication! Fast Charge UNLOCKED 🚀\n");
+	// Print to kernel log (dmesg) to verify the bypass is active
+	ds_err("[RAIZO_MOD] Bypassed DS28E16 Battery Authentication! Fast Charge UNLOCKED 🚀\n");
 
-    // Early return, skipping all the SHA384 HMAC operations below
-    return DS_TRUE;
+	// Early return, skipping all the SHA384 HMAC operations below
+	return DS_TRUE;
 #else
 	unsigned char PageData[32], MAC_Read_Value[32], CAL_MAC[32];
 	unsigned char status_chip[16];
@@ -1169,8 +1178,8 @@ static int ds28el16_get_page_data_retry(int page, unsigned char *data)
 	return DS_FALSE;
 }
 
-static int DS28E16_cmd_computeS_Secret_retry(int anon, int bdconst, int pg,
-					     unsigned char *partial)
+static int __maybe_unused DS28E16_cmd_computeS_Secret_retry(
+	int anon, int bdconst, int pg, unsigned char *partial)
 {
 	int i;
 
@@ -1186,7 +1195,7 @@ static int DS28E16_cmd_computeS_Secret_retry(int anon, int bdconst, int pg,
 	return DS_FALSE;
 }
 
-static int DS28E16_cmd_computeReadPageAuthentication_retry(
+static int __maybe_unused DS28E16_cmd_computeReadPageAuthentication_retry(
 	int anon, int pg, unsigned char *challenge, unsigned char *hmac)
 {
 	int i;
