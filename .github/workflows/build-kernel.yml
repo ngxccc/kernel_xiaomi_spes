@@ -103,13 +103,13 @@ jobs:
           fi
 
           echo "Using defconfig: ${DEFCONFIG} | RAM: ${TOTAL_MEM_GB}G | CPU: ${CPU_CORES} | Jobs: ${JOBS}"
-          make O="$OUT_DIR" LLVM=1 KBUILD_DEFCONFIG="$DEFCONFIG" defconfig
-          if ! make -j"${JOBS}" O="$OUT_DIR" LLVM=1 \
+          make -s O="$OUT_DIR" LLVM=1 KBUILD_DEFCONFIG="$DEFCONFIG" defconfig
+          if ! make -s -j"${JOBS}" O="$OUT_DIR" LLVM=1 \
                CC="ccache clang" \
                Image.gz-dtb; then
             RETRY_JOBS=$((JOBS > 2 ? JOBS - 2 : 1))
             echo "Retrying with lower parallelism: ${RETRY_JOBS} jobs"
-            make -j"${RETRY_JOBS}" O="$OUT_DIR" LLVM=1 \
+            make -s -j"${RETRY_JOBS}" O="$OUT_DIR" LLVM=1 \
                  CC="ccache clang" \
                  Image.gz-dtb
           fi
