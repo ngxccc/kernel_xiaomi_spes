@@ -148,3 +148,8 @@ compile_commands.json
 *.orig
 *~
 llvm.sh*
+
+# Don't ignore devcontainer config
+!.devcontainer/
+
+!.github/
