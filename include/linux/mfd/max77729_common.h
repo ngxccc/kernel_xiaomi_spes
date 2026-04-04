@@ -923,7 +923,7 @@ typedef struct {
 	cable_type == SEC_BATTERY_CABLE_WIRELESS_TX)
 
 // #define is_wireless_type(cable_type) \
-	// (is_hv_wireless_type(cable_type) || is_nv_wireless_type(cable_type))
+// 	(is_hv_wireless_type(cable_type) || is_nv_wireless_type(cable_type))
 
 // #define is_wireless_type(cable_type) \
 	// (is_hv_wireless_type(cable_type) || is_nv_wireless_type(cable_type))
