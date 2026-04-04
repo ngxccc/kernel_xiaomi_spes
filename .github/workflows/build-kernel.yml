@@ -73,6 +73,8 @@ jobs:
           echo "CLANG_VERSION=${CLANG_VERSION}" >> "$GITHUB_ENV"
 
       - name: 🔥 Start Kernel Compilation (LLVM Mode)
+        id: build_step
+        continue-on-error: true
         run: |
           export ARCH=arm64
           export SUBARCH=arm64
@@ -121,7 +123,7 @@ jobs:
           BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: |
-          STATUS="${{ job.status == 'success' && '✅ SUCCESS' || '❌ FAILED' }}"
+          STATUS="${{ steps.build_step.outcome == 'success' && '✅ SUCCESS' || '❌ FAILED' }}"
           shopt -s nullglob
           ZIP_FILES=(*.zip)
           if [ ${#ZIP_FILES[@]} -gt 0 ]; then
