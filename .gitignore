@@ -139,3 +139,12 @@ kernel/configs/android-*.cfg
 arch/arm64/boot/dts/vendor/
 
 out
+
+# Linter map
+compile_commands.json
+
+# Backup files từ sed hoặc editor
+*.bak
+*.orig
+*~
+llvm.sh*
