@@ -86,26 +86,36 @@ jobs:
           # Configure ccache max size
           ccache -M 5G
 
-          # Build using LLVM=1 (Automatically uses clang, ld.lld, llvm-ar, etc.)
-          make O=out LLVM=1 vendor/spes-perf_defconfig
-          make -j$(nproc --all) O=out LLVM=1 \
+          DEFCONFIG_FILE=$(find . -name "spes-perf_defconfig" | head -n 1)
+          echo "📍 Founded at: $DEFCONFIG_FILE"
+
+          if [ -z "$DEFCONFIG_FILE" ]; then
+            echo "❌ Error: Not found spes-perf_defconfig file!"
+            exit 1
+          fi
+
+          sudo mkdir -p "$OUT_DIR"
+          sudo chown -R $USER:$USER "$OUT_DIR"
+
+          cp "$DEFCONFIG_FILE" "$OUT_DIR/.config"
+
+          make O="$OUT_DIR" LLVM=1 olddefconfig
+
+          make -j$(nproc --all) O="$OUT_DIR" LLVM=1 \
                CC="ccache clang" \
                Image.gz-dtb
-
-          # Prepare artifacts for upload
-          mkdir -p final_zip
-          cp out/arch/arm64/boot/Image.gz-dtb final_zip/
 
       - name: 📦 Package with AnyKernel3
         run: |
           git clone --depth=1 https://github.com/osm0sis/AnyKernel3.git AnyKernel3
-
           rm -rf AnyKernel3/.git AnyKernel3/README.md
 
-          # Copy kernel image into AnyKernel3
-          cp "$OUT_DIR"/arch/arm64/boot/Image.gz-dtb AnyKernel3/
-
-          # sed -i 's/device.name1=magnum/device.name1=spes/g' AnyKernel3/anykernel.sh
+          if [ -f "$OUT_DIR/arch/arm64/boot/Image.gz-dtb" ]; then
+            cp "$OUT_DIR/arch/arm64/boot/Image.gz-dtb" AnyKernel3/
+          else
+            echo "❌ Error: Not found Image.gz-dtb after build!"
+            exit 1
+          fi
 
           cd AnyKernel3
           zip -r9 "../Spes-Kernel-$(date +'%Y%m%d-%H%M').zip" *
