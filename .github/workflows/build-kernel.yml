@@ -88,6 +88,34 @@ jobs:
             exit 1
           fi
 
+          cat << 'EOF' > AnyKernel3/anykernel.sh
+          ### AnyKernel3 Ramdisk Mod Script
+          properties() { '
+          kernel.string=Spes Custom Kernel by n_gxc
+          do.devicecheck=1
+          do.modules=0
+          do.systemless=0
+          do.cleanup=1
+          do.cleanuponabort=0
+          device.name1=spes
+          device.name2=spesn
+          supported.versions=
+          supported.patchlevels=
+          '; } # end properties
+
+          # Thiết lập cấu trúc phân vùng chuẩn cho Xiaomi spes (A/B Slot)
+          block=boot;
+          is_slot_device=1;
+          ramdisk_compression=auto;
+          patch_vbmeta_flag=auto;
+
+          # Nạp thư viện lõi của AK3
+          . tools/ak3-core.sh;
+
+          dump_boot;
+          write_boot;
+          EOF
+
           cd AnyKernel3
           zip -r9 "../Spes-Kernel-$(date +'%Y%m%d-%H%M').zip" *
           cd ..
