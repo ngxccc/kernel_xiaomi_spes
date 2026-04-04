@@ -2074,6 +2074,8 @@ OBJS += $(TXRX3.0_OBJS)
 endif
 
 ccflags-y += $(INCS)
+ccflags-y += -I$(srctree)/$(WLAN_FW_API)/fw
+ccflags-y += -I$(srctree)/$(WLAN_ROOT)/../qdf
 
 cppflags-y +=	-DANI_OS_TYPE_ANDROID=6 \
 		-Wall\

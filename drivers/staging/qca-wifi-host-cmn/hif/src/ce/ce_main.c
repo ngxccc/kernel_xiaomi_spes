@@ -16,6 +16,7 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
+#include "drivers/staging/qca-wifi-host-cmn/qdf/inc/qdf_status.h"
 #include "targcfg.h"
 #include "qdf_lock.h"
 #include "qdf_status.h"
