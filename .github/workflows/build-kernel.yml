@@ -9,6 +9,9 @@ jobs:
   build:
     name: 🛠️ Compile Kernel
     runs-on: ubuntu-24.04 # Updated to 24.04 to match the DevContainer environment
+    env:
+      OUT_DIR: /mnt/kernel-out
+      CCACHE_DIR: /mnt/ccache
 
     environment: production
 
@@ -23,6 +26,23 @@ jobs:
           remove-dotnet: 'true'
           remove-android: 'true'
           remove-haskell: 'true'
+
+      - name: 🧹 Aggressive Disk Cleanup
+        run: |
+          set -e
+          echo "[Before cleanup]"
+          df -h
+          sudo rm -rf /usr/local/share/boost \
+                      /usr/local/lib/android \
+                      /opt/hostedtoolcache/CodeQL \
+                      /opt/microsoft \
+                      /usr/share/swift
+          sudo apt-get clean
+          sudo rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+          sudo mkdir -p "$OUT_DIR" "$CCACHE_DIR"
+          sudo chown -R "$USER:$USER" "$OUT_DIR" "$CCACHE_DIR"
+          echo "[After cleanup]"
+          df -h
 
       - name: ⚙️ Install LLVM 22 & Dependencies
         run: |
@@ -42,7 +62,7 @@ jobs:
       - name: 🧠 Setup Ccache
         uses: actions/cache@v5
         with:
-          path: ~/.ccache
+          path: ${{ env.CCACHE_DIR }}
           key: ${{ runner.os }}-kernel-clang-${{ github.sha }}
           restore-keys: |
             ${{ runner.os }}-kernel-clang-
@@ -60,12 +80,13 @@ jobs:
           export CROSS_COMPILE_ARM32=arm-linux-gnueabi-
           export KBUILD_BUILD_USER="n_gxc"
           export KBUILD_BUILD_HOST="Github-Actions"
+          export CCACHE_DIR="$CCACHE_DIR"
 
           # Reduce sporadic toolchain pipe failures under high parallel load.
           ulimit -n 65535
 
           # Configure ccache
-          ccache -M 5G
+          ccache -M 2G
           ccache -o compression=true
 
           # Pick job count based on available RAM to avoid OOM/clang broken pipe.
@@ -86,20 +107,20 @@ jobs:
           echo "Detected RAM: ${TOTAL_MEM_GB}G | CPU: ${CPU_CORES} | Build jobs: ${JOBS}"
 
           # Build using LLVM=1 (Automatically uses clang, ld.lld, llvm-ar, etc.)
-          make O=out LLVM=1 vendor/spes-perf_defconfig
-          if ! make -j"${JOBS}" O=out LLVM=1 \
+          make O="$OUT_DIR" LLVM=1 vendor/spes-perf_defconfig
+          if ! make -j"${JOBS}" O="$OUT_DIR" LLVM=1 \
                CC="ccache clang" \
                Image.gz-dtb; then
             RETRY_JOBS=$((JOBS > 2 ? JOBS - 2 : 1))
             echo "Initial build failed, retrying with lower parallelism: ${RETRY_JOBS} jobs"
-            make -j"${RETRY_JOBS}" O=out LLVM=1 \
+            make -j"${RETRY_JOBS}" O="$OUT_DIR" LLVM=1 \
                  CC="ccache clang" \
                  Image.gz-dtb
           fi
 
           # Prepare artifacts for upload
           mkdir -p final_zip
-          cp out/arch/arm64/boot/Image.gz-dtb final_zip/
+          cp "$OUT_DIR"/arch/arm64/boot/Image.gz-dtb final_zip/
 
       - name: 📦 Package with AnyKernel3
         run: |
@@ -108,7 +129,7 @@ jobs:
           rm -rf AnyKernel3/.git AnyKernel3/README.md
 
           # Copy kernel image into AnyKernel3
-          cp out/arch/arm64/boot/Image.gz-dtb AnyKernel3/
+          cp "$OUT_DIR"/arch/arm64/boot/Image.gz-dtb AnyKernel3/
 
           # sed -i 's/device.name1=magnum/device.name1=spes/g' AnyKernel3/anykernel.sh
 
