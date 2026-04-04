@@ -108,11 +108,13 @@ jobs:
 
           # Build using LLVM=1 (Automatically uses clang, ld.lld, llvm-ar, etc.)
           DEFCONFIG="vendor/spes-perf_defconfig"
-          if [ ! -f "arch/arm64/configs/${DEFCONFIG}" ]; then
-            echo "[ERROR] Missing defconfig: arch/arm64/configs/${DEFCONFIG}"
+
+          # 2. Check thông minh (Chấp cả 2 chuẩn thư mục mới và cũ)
+          if [ ! -f "configs/${DEFCONFIG}" ] && [ ! -f "arch/arm64/configs/${DEFCONFIG}" ]; then
+            echo "❌ [ERROR] Not found ${DEFCONFIG} at 2 path!"
             exit 1
           fi
-          make O="$OUT_DIR" LLVM=1 KBUILD_DEFCONFIG="$DEFCONFIG" defconfig
+          make O="$OUT_DIR" LLVM=1 "${DEFCONFIG}"
           if ! make -j"${JOBS}" O="$OUT_DIR" LLVM=1 \
                CC="ccache clang" \
                Image.gz-dtb; then
