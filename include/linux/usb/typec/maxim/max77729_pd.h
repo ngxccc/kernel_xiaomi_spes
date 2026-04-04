@@ -14,6 +14,7 @@
 
 #ifndef __LINUX_MFD_MAX77729_PD_H
 #define __LINUX_MFD_MAX77729_PD_H
+#include <linux/workqueue.h>
 #include "max77729.h"
 
 #define MAX77729_PD_NAME	"MAX77729_PD"

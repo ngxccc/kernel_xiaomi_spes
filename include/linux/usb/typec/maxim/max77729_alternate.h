@@ -15,6 +15,9 @@
 #ifndef __LINUX_MAXIM_CCIC_ALTERNATE_MODE_H__
 #define __LINUX_MAXIM_CCIC_ALTERNATE_MODE_H__
 
+struct max77729_usbc_platform_data;
+struct work_struct;
+
 typedef union { /* new defined union for MD05 Op Code Command Data */
 	uint8_t        DATA;
 	struct {

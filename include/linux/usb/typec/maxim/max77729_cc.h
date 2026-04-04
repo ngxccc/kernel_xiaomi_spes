@@ -14,6 +14,7 @@
 
 #ifndef __LINUX_MFD_MAX77729_CC_H
 #define __LINUX_MFD_MAX77729_CC_H
+#include "linux/usb/typec/maxim/max77729.h"
 #define MAX77729_CC_NAME	"max77729_CC"
 
 

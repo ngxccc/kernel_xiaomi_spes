@@ -23,6 +23,8 @@
 #ifndef __MAX77729_MUIC_H__
 #define __MAX77729_MUIC_H__
 
+#include "linux/mutex.h"
+#include "linux/usb/typec/maxim/max77729.h"
 #include <linux/workqueue.h>
 
 #define MUIC_DEV_NAME			"muic-max77729"
