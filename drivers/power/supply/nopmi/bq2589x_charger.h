@@ -1,6 +1,7 @@
 #ifndef __BQ2589X_CHARGER_HEADER__
 #define __BQ2589X_CHARGER_HEADER__
 
+#include "linux/power_supply.h"
 #include <linux/pmic-voter.h>
 #include "../../../usb/typec/tcpc/inc/tcpm.h"
 #include "../../../usb/typec/tcpc/inc/tcpci_core.h"
@@ -131,7 +132,7 @@ struct bq2589x {
         //struct votable		*chgctrl_votable;
 
 	enum power_supply_type chg_type;
-	bool chg_online; 
+	bool chg_online;
 
 	int irq_gpio;
 	int usb_switch1;

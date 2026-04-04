@@ -5,7 +5,10 @@
 #ifndef __Q6_USM_H__
 #define __Q6_USM_H__
 
-#include <ipc/apr_us.h>
+#include <linux/wait.h>
+#include <linux/types.h>
+#include <linux/mutex.h>
+#include "../include/ipc/apr_us.h"
 
 #define Q6USM_EVENT_UNDEF                0
 #define Q6USM_EVENT_READ_DONE            1

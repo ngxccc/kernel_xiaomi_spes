@@ -28,6 +28,8 @@ echo "🏗️ [4/5] Preparing Kernel headers and scripts..."
 make LLVM=1 LLVM_IAS=1 olddefconfig
 make LLVM=1 LLVM_IAS=1 prepare -j$(nproc)
 make LLVM=1 LLVM_IAS=1 modules_prepare -j$(nproc)
+# make LLVM=1 LLVM_IAS=1 techpack/audio/ -j$(nproc)
+
 
 echo "🗺️ [5/5] Generating LSP compile_commands.json..."
 python3 scripts/gen_compile_commands.py

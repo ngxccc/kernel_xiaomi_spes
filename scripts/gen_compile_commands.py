@@ -88,7 +88,7 @@ def process_line(root_directory, file_directory, command_prefix, relative_path):
     # escape the pound sign '#', either as '\#' or '$(pound)' (depending on the
     # kernel version). The compile_commands.json file is not interepreted
     # by Make, so this code replaces the escaped version with '#'.
-    prefix = command_prefix.replace('\#', '#').replace('$(pound)', '#')
+    prefix = command_prefix.replace('\\#', '#').replace('$(pound)', '#')
 
     cur_dir = root_directory
     expected_path = os.path.join(cur_dir, relative_path)
