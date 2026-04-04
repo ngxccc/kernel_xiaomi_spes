@@ -1,3 +1,4 @@
+#include <linux/power_supply.h>
 #include <linux/usb/typec/maxim/max77729_usbc.h>
 #include "drivers/power/supply/nopmi/bq2589x_charger.h"
 #ifdef pr_fmt

@@ -5,6 +5,7 @@
 
 #include "asm-generic/int-ll64.h"
 #include "linux/kconfig.h"
+#include "techpack/audio/include/ipc/apr_us.h"
 #include <asm-generic/errno-base.h>
 #include <linux/compat.h>
 #include <linux/fs.h>
@@ -20,8 +21,6 @@
 #include <linux/mutex.h>
 #include <linux/version.h>
 #include "../include/ipc/apr.h"
-#include "../include/ipc/apr_us.h"
-#include <dsp/apr_audio-v2.h>
 #include "q6usm.h"
 #include "usf.h"
 #include "usfcdev.h"
