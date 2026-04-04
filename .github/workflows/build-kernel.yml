@@ -61,14 +61,41 @@ jobs:
           export KBUILD_BUILD_USER="n_gxc"
           export KBUILD_BUILD_HOST="Github-Actions"
 
-          # Configure ccache max size
+          # Reduce sporadic toolchain pipe failures under high parallel load.
+          ulimit -n 65535
+
+          # Configure ccache
           ccache -M 5G
+          ccache -o compression=true
+
+          # Pick job count based on available RAM to avoid OOM/clang broken pipe.
+          TOTAL_MEM_GB=$(awk '/MemTotal/ {print int($2/1024/1024)}' /proc/meminfo)
+          CPU_CORES=$(nproc --all)
+          if [ "$TOTAL_MEM_GB" -le 8 ]; then
+            JOBS=$((CPU_CORES / 2))
+          elif [ "$TOTAL_MEM_GB" -le 12 ]; then
+            JOBS=$((CPU_CORES * 2 / 3))
+          else
+            JOBS=$CPU_CORES
+          fi
+
+          if [ "$JOBS" -lt 1 ]; then
+            JOBS=1
+          fi
+
+          echo "Detected RAM: ${TOTAL_MEM_GB}G | CPU: ${CPU_CORES} | Build jobs: ${JOBS}"
 
           # Build using LLVM=1 (Automatically uses clang, ld.lld, llvm-ar, etc.)
           make O=out LLVM=1 vendor/spes-perf_defconfig
-          make -j$(nproc --all) O=out LLVM=1 \
+          if ! make -j"${JOBS}" O=out LLVM=1 \
                CC="ccache clang" \
-               Image.gz-dtb
+               Image.gz-dtb; then
+            RETRY_JOBS=$((JOBS > 2 ? JOBS - 2 : 1))
+            echo "Initial build failed, retrying with lower parallelism: ${RETRY_JOBS} jobs"
+            make -j"${RETRY_JOBS}" O=out LLVM=1 \
+                 CC="ccache clang" \
+                 Image.gz-dtb
+          fi
 
           # Prepare artifacts for upload
           mkdir -p final_zip
