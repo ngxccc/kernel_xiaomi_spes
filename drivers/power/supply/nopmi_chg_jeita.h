@@ -1,7 +1,7 @@
+#include "linux/workqueue.h"
 #if !defined(__NOPMI_CHG_JEITA_H__)
 #define __NOPMI_CHG_JEITA_H__
 
-#include "nopmi_chg_common.h"
 
 /* sw jeita */
 #define JEITA_TEMP_ABOVE_T4_CV	4240

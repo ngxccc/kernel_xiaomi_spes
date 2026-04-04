@@ -13,9 +13,6 @@
 #include <linux/of_device.h>
 #include <linux/of_irq.h>
 #include <linux/pmic-voter.h>
-#include "maxim/max77729_charger.h"
-#include "nopmi/bq2589x_charger.h"
-#include "../../usb/typec/tcpc/inc/tcpm.h"
 
 enum quick_charge_type {
 	QUICK_CHARGE_NORMAL = 0,
@@ -33,8 +30,10 @@ struct quick_charge {
 
 int nopmi_chg_is_usb_present(struct power_supply *usb_psy);
 
+#if defined(CONFIG_NOPMI_CHARGER)
 char nopmi_set_charger_ic_type(NOPMI_CHARGER_IC_TYPE nopmi_type);
 NOPMI_CHARGER_IC_TYPE nopmi_get_charger_ic_type(void);
+#endif
 
 int nopmi_set_charge_enable(bool en);
 

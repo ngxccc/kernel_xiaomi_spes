@@ -1,3 +1,5 @@
+#include "linux/notifier.h"
+#include "linux/power_supply.h"
 #if !defined(__NOPMI_CHG_H__)
 #define __NOPMI_CHG_H__
 
