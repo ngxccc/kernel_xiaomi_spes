@@ -5,10 +5,9 @@ set -euo pipefail
 KERNEL_ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 cd "$KERNEL_ROOT"
 
+. "$KERNEL_ROOT/scripts/kernel_build_common.sh"
+
 MODE="${1:-clean}"
-OUT_DIR="${OUT_DIR:-$KERNEL_ROOT/out}"
-DEFCONFIG="${DEFCONFIG:-vendor/spes-perf_defconfig}"
-TARGET="${TARGET:-Image.gz-dtb}"
 
 case "$MODE" in
 	clean|fast)
@@ -18,14 +17,6 @@ case "$MODE" in
 		exit 1
 		;;
 esac
-
-export ARCH="${ARCH:-arm64}"
-export SUBARCH="${SUBARCH:-arm64}"
-export CROSS_COMPILE="${CROSS_COMPILE:-aarch64-linux-gnu-}"
-export CROSS_COMPILE_ARM32="${CROSS_COMPILE_ARM32:-arm-linux-gnueabi-}"
-export LLVM="${LLVM:-1}"
-export LLVM_IAS="${LLVM_IAS:-1}"
-
 if command -v ccache >/dev/null 2>&1; then
 	export CC="${CC:-ccache clang}"
 else
@@ -69,6 +60,21 @@ ensure_dir() {
 	exit 1
 }
 
+clean_source_tree_state() {
+	remove_dir "$KERNEL_ROOT/include/generated"
+	remove_dir "$KERNEL_ROOT/arch/arm64/include/generated"
+	rm -f \
+		"$KERNEL_ROOT/.config" \
+		"$KERNEL_ROOT/.config.old" \
+		"$KERNEL_ROOT/Module.symvers" \
+		"$KERNEL_ROOT/System.map" \
+		"$KERNEL_ROOT/vmlinux" \
+		"$KERNEL_ROOT/.tmp_"* 2>/dev/null || true
+	if command -v find >/dev/null 2>&1; then
+		find "$KERNEL_ROOT" -maxdepth 1 -type f -name '.tmp_*' -delete
+	fi
+}
+
 if [[ "$MODE" == "clean" ]]; then
 	remove_dir "$OUT_DIR"
 	ensure_dir "$OUT_DIR"
@@ -79,6 +85,7 @@ else
 		echo "Run: $0 clean"
 		exit 1
 	fi
+	clean_source_tree_state
 fi
 
 make -s O="$OUT_DIR" LLVM="$LLVM" LLVM_IAS="$LLVM_IAS" olddefconfig

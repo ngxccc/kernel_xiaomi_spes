@@ -36,8 +36,7 @@ echo "[2/4] Injecting automated..."
 # ./scripts/config --set-str CONFIG_DEFAULT_TCP_CONG "bbr"
 # ./scripts/config --disable CONFIG_SLUB_DEBUG
 
-./scripts/config --file .config \
-    --enable CONFIG_PSTORE_LAST_KMSG \
+./scripts/config --enable CONFIG_NOPMI_CHARGER
 
 # 5. DEPENDENCY RESOLUTION & SAVING
 echo "[3/4] Resolving dependencies and generating minimal defconfig..."
