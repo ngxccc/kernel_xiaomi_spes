@@ -21,7 +21,7 @@ jobs:
           sudo apt-get update
           # Install essential build dependencies
           sudo apt-get install -y wget lsb-release software-properties-common gnupg bc bison flex \
-          libssl-dev libncurses-dev libelf-dev make gcc-aarch64-linux-gnu python3 ccache
+          libssl-dev libncurses-dev libelf-dev make gcc-aarch64-linux-gnu gcc-arm-linux-gnueabi python3 ccache
 
           # Fetch the official LLVM installation script
           wget https://apt.llvm.org/llvm.sh
@@ -43,6 +43,8 @@ jobs:
         run: |
           export ARCH=arm64
           export SUBARCH=arm64
+          export CROSS_COMPILE=aarch64-linux-gnu-
+          export CROSS_COMPILE_ARM32=arm-linux-gnueabi-
           export KBUILD_BUILD_USER="n_gxc"
           export KBUILD_BUILD_HOST="Github-Actions"
 
