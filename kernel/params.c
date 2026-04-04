@@ -366,7 +366,7 @@ int param_set_invbool(const char *val, const struct kernel_param *kp)
 {
 	int ret;
 	bool boolval;
-	struct kernel_param dummy;
+	struct kernel_param dummy = *kp;
 
 	dummy.arg = &boolval;
 	ret = param_set_bool(val, &dummy);
@@ -422,13 +422,13 @@ static int param_array(struct module *mod,
 		       unsigned int *num)
 {
 	int ret;
-	struct kernel_param kp;
+	struct kernel_param kp = {
+		.mod = mod,
+		.name = name,
+		.arg = elem,
+		.level = level,
+	};
 	char save;
-
-	/* Get the name right for errors. */
-	kp.name = name;
-	kp.arg = elem;
-	kp.level = level;
 
 	*num = 0;
 	/* We expect a comma-separated list of values. */
