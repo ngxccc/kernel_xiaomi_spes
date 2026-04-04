@@ -13,6 +13,7 @@ echo "📍 Root directory set to: $KERNEL_ROOT"
 . "$KERNEL_ROOT/scripts/kernel_build_common.sh"
 
 MODE="${1:-clean}"
+AUTO_PATCH="${AUTO_PATCH:-1}"
 
 case "$MODE" in
 	clean|fast)
@@ -23,6 +24,12 @@ case "$MODE" in
 		exit 1
 		;;
 esac
+
+if [[ "$AUTO_PATCH" != "0" && "$AUTO_PATCH" != "1" ]]; then
+	echo "❌ Invalid AUTO_PATCH value: $AUTO_PATCH"
+	echo "Use AUTO_PATCH=1 (enabled) or AUTO_PATCH=0 (disabled)"
+	exit 1
+fi
 
 clean_source_tree_state() {
 	rm -f \
@@ -38,11 +45,16 @@ clean_source_tree_state() {
 }
 
 if [[ "$MODE" == "clean" ]]; then
-	echo "🔥 [1/5] Cleaning build artifacts..."
-	make O="$OUT_DIR" LLVM="$LLVM" LLVM_IAS="$LLVM_IAS" mrproper
+	if [[ "$AUTO_PATCH" == "1" ]]; then
+		echo "🧩 [1/4] Running auto_patch_config.sh to patch and update $DEFCONFIG..."
+		"$KERNEL_ROOT/scripts/auto_patch_config.sh"
+	else
+		echo "🔥 [1/5] Cleaning build artifacts..."
+		make O="$OUT_DIR" LLVM="$LLVM" LLVM_IAS="$LLVM_IAS" mrproper
 
-	echo "🛠️ [2/5] Applying $DEFCONFIG..."
-	make O="$OUT_DIR" LLVM="$LLVM" LLVM_IAS="$LLVM_IAS" KBUILD_DEFCONFIG="$DEFCONFIG" defconfig
+		echo "🛠️ [2/5] Applying $DEFCONFIG..."
+		make O="$OUT_DIR" LLVM="$LLVM" LLVM_IAS="$LLVM_IAS" KBUILD_DEFCONFIG="$DEFCONFIG" defconfig
+	fi
 else
 	if [[ ! -f "$OUT_DIR/.config" ]]; then
 		echo "❌ fast mode requires an existing config in $OUT_DIR/.config"
@@ -53,14 +65,25 @@ else
 	echo "⚡ [1/3] Reusing existing build state..."
 fi
 
-echo "🏗️ [$([[ "$MODE" == "clean" ]] && echo "4/5" || echo "2/3")] Preparing Kernel headers and scripts..."
+if [[ "$MODE" == "clean" && "$AUTO_PATCH" == "1" ]]; then
+	PREP_STEP="2/4"
+	GEN_STEP="3/4"
+elif [[ "$MODE" == "clean" ]]; then
+	PREP_STEP="4/5"
+	GEN_STEP="5/5"
+else
+	PREP_STEP="2/3"
+	GEN_STEP="3/3"
+fi
+
+echo "🏗️ [$PREP_STEP] Preparing Kernel headers and scripts..."
 make O="$OUT_DIR" LLVM="$LLVM" LLVM_IAS="$LLVM_IAS" olddefconfig
 make O="$OUT_DIR" LLVM="$LLVM" LLVM_IAS="$LLVM_IAS" prepare -j$(nproc)
 make O="$OUT_DIR" LLVM="$LLVM" LLVM_IAS="$LLVM_IAS" modules_prepare -j$(nproc)
 # make O="$OUT_DIR" LLVM="$LLVM" LLVM_IAS="$LLVM_IAS" techpack/audio/ -j$(nproc)
 
 
-echo "🗺️ [$([[ "$MODE" == "clean" ]] && echo "5/5" || echo "3/3")] Generating LSP compile_commands.json..."
+echo "🗺️ [$GEN_STEP] Generating LSP compile_commands.json..."
 python3 scripts/gen_compile_commands.py \
 	--directory "$COMPILE_COMMANDS_DIR" \
 	--output "$COMPILE_COMMANDS_OUT"

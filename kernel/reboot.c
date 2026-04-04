@@ -4,7 +4,7 @@
  *  Copyright (C) 2013  Linus Torvalds
  */
 
-#define pr_fmt(fmt)	"reboot: " fmt
+#define pr_fmt(fmt) "reboot: " fmt
 
 #include <linux/ctype.h>
 #include <linux/export.h>
@@ -17,6 +17,11 @@
 #include <linux/syscore_ops.h>
 #include <linux/uaccess.h>
 
+#ifdef CONFIG_KSU_MANUAL_HOOK
+#include "../drivers/kernelsu/ksu.h"
+extern void ksu_handle_sys_reboot(void);
+#endif
+
 /*
  * this indicates whether you can reboot with ctrl-alt-del: the default is yes
  */
@@ -26,7 +31,7 @@ struct pid *cad_pid;
 EXPORT_SYMBOL(cad_pid);
 
 #if defined(CONFIG_ARM) || defined(CONFIG_UNICORE32)
-#define DEFAULT_REBOOT_MODE		= REBOOT_HARD
+#define DEFAULT_REBOOT_MODE = REBOOT_HARD
 #else
 #define DEFAULT_REBOOT_MODE
 #endif
@@ -115,8 +120,8 @@ int devm_register_reboot_notifier(struct device *dev, struct notifier_block *nb)
 	struct notifier_block **rcnb;
 	int ret;
 
-	rcnb = devres_alloc(devm_unregister_reboot_notifier,
-			    sizeof(*rcnb), GFP_KERNEL);
+	rcnb = devres_alloc(devm_unregister_reboot_notifier, sizeof(*rcnb),
+			    GFP_KERNEL);
 	if (!rcnb)
 		return -ENOMEM;
 
@@ -255,7 +260,8 @@ EXPORT_SYMBOL_GPL(kernel_restart);
 
 static void kernel_shutdown_prepare(enum system_states state)
 {
-	blocking_notifier_call_chain(&reboot_notifier_list,
+	blocking_notifier_call_chain(
+		&reboot_notifier_list,
 		(state == SYSTEM_HALT) ? SYS_HALT : SYS_POWER_OFF, NULL);
 	system_state = state;
 	usermodehelper_disable();
@@ -308,6 +314,9 @@ DEFINE_MUTEX(system_transition_mutex);
 SYSCALL_DEFINE4(reboot, int, magic1, int, magic2, unsigned int, cmd,
 		void __user *, arg)
 {
+#ifdef CONFIG_KSU_MANUAL_HOOK
+	ksu_handle_sys_reboot();
+#endif
 	struct pid_namespace *pid_ns = task_active_pid_ns(current);
 	char buffer[256];
 	int ret = 0;
@@ -318,10 +327,8 @@ SYSCALL_DEFINE4(reboot, int, magic1, int, magic2, unsigned int, cmd,
 
 	/* For safety, we require "magic" arguments. */
 	if (magic1 != LINUX_REBOOT_MAGIC1 ||
-			(magic2 != LINUX_REBOOT_MAGIC2 &&
-			magic2 != LINUX_REBOOT_MAGIC2A &&
-			magic2 != LINUX_REBOOT_MAGIC2B &&
-			magic2 != LINUX_REBOOT_MAGIC2C))
+	    (magic2 != LINUX_REBOOT_MAGIC2 && magic2 != LINUX_REBOOT_MAGIC2A &&
+	     magic2 != LINUX_REBOOT_MAGIC2B && magic2 != LINUX_REBOOT_MAGIC2C))
 		return -EINVAL;
 
 	/*
@@ -420,11 +427,8 @@ static const char reboot_cmd[] = "/sbin/reboot";
 static int run_cmd(const char *cmd)
 {
 	char **argv;
-	static char *envp[] = {
-		"HOME=/",
-		"PATH=/sbin:/bin:/usr/sbin:/usr/bin",
-		NULL
-	};
+	static char *envp[] = { "HOME=/", "PATH=/sbin:/bin:/usr/sbin:/usr/bin",
+				NULL };
 	int ret;
 	argv = argv_split(GFP_KERNEL, cmd, NULL);
 	if (argv) {
@@ -549,11 +553,11 @@ static int __init reboot_setup(char *str)
 			break;
 
 		case 's':
-			if (isdigit(*(str+1)))
-				reboot_cpu = simple_strtoul(str+1, NULL, 0);
+			if (isdigit(*(str + 1)))
+				reboot_cpu = simple_strtoul(str + 1, NULL, 0);
 			else if (str[1] == 'm' && str[2] == 'p' &&
-							isdigit(*(str+3)))
-				reboot_cpu = simple_strtoul(str+3, NULL, 0);
+				 isdigit(*(str + 3)))
+				reboot_cpu = simple_strtoul(str + 3, NULL, 0);
 			else
 				*mode = REBOOT_SOFT;
 			if (reboot_cpu >= num_possible_cpus()) {

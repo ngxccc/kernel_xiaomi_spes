@@ -2,6 +2,7 @@
 /* Atomic operations usable in machine independent code */
 #ifndef _LINUX_ATOMIC_H
 #define _LINUX_ATOMIC_H
+#include "asm/cmpxchg.h"
 #include <linux/types.h>
 
 #include <asm/atomic.h>

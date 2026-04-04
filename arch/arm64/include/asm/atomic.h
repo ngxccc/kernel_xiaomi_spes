@@ -38,7 +38,7 @@
 
 #undef __ARM64_IN_ATOMIC_IMPL
 
-#include <asm/cmpxchg.h>
+// #include <asm/cmpxchg.h>
 
 #define ATOMIC_INIT(i)	{ (i) }
 
