@@ -46,6 +46,21 @@ on_exit() {
 		fi
 	fi
 
+  # Update the defconfig with the final build configuration (minimal format)
+  TARGET_DEFCONFIG_PATH="arch/$ARCH/configs/$DEFCONFIG"
+  if [[ -d "$(dirname "$TARGET_DEFCONFIG_PATH")" ]]; then
+    echo "📝 Generating minimal defconfig: $TARGET_DEFCONFIG_PATH"
+    make -s O="$OUT_DIR" LLVM="$LLVM" LLVM_IAS="$LLVM_IAS" savedefconfig
+    if [[ -f "$OUT_DIR/defconfig" ]]; then
+      cp "$OUT_DIR/defconfig" "$TARGET_DEFCONFIG_PATH"
+      echo "✅ Defconfig updated successfully"
+    else
+      echo "⚠️ savedefconfig failed to generate defconfig"
+    fi
+  else
+    echo "⚠️ Could not update defconfig (target directory missing)"
+  fi
+
 	return "$build_status"
 }
 
@@ -161,17 +176,3 @@ fi
 
 echo "✅ Build complete: $IMAGE_PATH"
 
-# Update the defconfig with the final build configuration (minimal format)
-TARGET_DEFCONFIG_PATH="arch/$ARCH/configs/$DEFCONFIG"
-if [[ -d "$(dirname "$TARGET_DEFCONFIG_PATH")" ]]; then
-	echo "📝 Generating minimal defconfig: $TARGET_DEFCONFIG_PATH"
-	make -s O="$OUT_DIR" LLVM="$LLVM" LLVM_IAS="$LLVM_IAS" savedefconfig
-	if [[ -f "$OUT_DIR/defconfig" ]]; then
-		cp "$OUT_DIR/defconfig" "$TARGET_DEFCONFIG_PATH"
-		echo "✅ Defconfig updated successfully"
-	else
-		echo "⚠️ savedefconfig failed to generate defconfig"
-	fi
-else
-	echo "⚠️ Could not update defconfig (target directory missing)"
-fi

@@ -20,7 +20,7 @@ if [[ ! -f "$CONFIG_FILE" ]]; then
     exit 1
 fi
 
-echo "[PATCH] Applying KernelSU + SUSFS config modifications to $CONFIG_FILE..."
+echo "[PATCH] Applying config modifications to $CONFIG_FILE..."
 
 # Enable KernelSU Core
 ./scripts/config --file "$CONFIG_FILE" --enable CONFIG_KSU
