@@ -19,6 +19,8 @@ if [[ ! -f "$PATCH_FILE" ]]; then
 	exit 1
 fi
 
+PATCH_FILE="$(realpath "$PATCH_FILE")"
+
 if [[ ! -d "$KERNELSU_PATH" || ! -d "$KERNELSU_KERNEL_DIR" ]]; then
 	echo "📦 Initializing KernelSU-Next submodule..."
 	git -C "$KERNEL_ROOT" submodule update --init --recursive KernelSU-Next
