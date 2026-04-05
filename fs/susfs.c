@@ -28,8 +28,8 @@ bool susfs_is_log_enabled __read_mostly = true;
 #define SUSFS_LOGI(fmt, ...) if (susfs_is_log_enabled) pr_info("susfs:[%u][%d][%s] " fmt, current_uid().val, current->pid, __func__, ##__VA_ARGS__)
 #define SUSFS_LOGE(fmt, ...) if (susfs_is_log_enabled) pr_err("susfs:[%u][%d][%s]" fmt, current_uid().val, current->pid, __func__, ##__VA_ARGS__)
 #else
-#define SUSFS_LOGI(fmt, ...) 
-#define SUSFS_LOGE(fmt, ...) 
+#define SUSFS_LOGI(fmt, ...)
+#define SUSFS_LOGE(fmt, ...)
 #endif
 
 /* sus_path */
@@ -117,7 +117,7 @@ int susfs_add_sus_path(struct st_susfs_sus_path* __user user_info) {
 	hash_add(SUS_PATH_HLIST, &new_entry->node, info.target_ino);
 	if (update_hlist) {
 		SUSFS_LOGI("target_ino: '%lu', target_pathname: '%s' is successfully updated to SUS_PATH_HLIST\n",
-				new_entry->target_ino, new_entry->target_pathname);	
+				new_entry->target_ino, new_entry->target_pathname);
 	} else {
 		SUSFS_LOGI("target_ino: '%lu', target_pathname: '%s' is successfully added to SUS_PATH_HLIST\n",
 				new_entry->target_ino, new_entry->target_pathname);
@@ -222,7 +222,7 @@ int susfs_add_sus_mount(struct st_susfs_sus_mount* __user user_info) {
 
 	INIT_LIST_HEAD(&new_list->list);
 	spin_lock(&susfs_spin_lock);
-	list_add_tail(&new_list->list, &LH_SUS_MOUNT);
+	list_add_tail_rcu(&new_list->list, &LH_SUS_MOUNT);
 	SUSFS_LOGI("target_pathname: '%s', target_dev: '%lu', is successfully added to LH_SUS_MOUNT\n",
 				new_list->info.target_pathname, new_list->info.target_dev);
 	spin_unlock(&susfs_spin_lock);
@@ -550,7 +550,7 @@ int susfs_add_try_umount(struct st_susfs_try_umount* __user user_info) {
 
 	INIT_LIST_HEAD(&new_list->list);
 	spin_lock(&susfs_spin_lock);
-	list_add_tail(&new_list->list, &LH_TRY_UMOUNT_PATH);
+	list_add_tail_rcu(&new_list->list, &LH_TRY_UMOUNT_PATH);
 	spin_unlock(&susfs_spin_lock);
 	SUSFS_LOGI("target_pathname: '%s', mnt_mode: %d, is successfully added to LH_TRY_UMOUNT_PATH\n", new_list->info.target_pathname, new_list->info.mnt_mode);
 	return 0;
@@ -641,7 +641,7 @@ out_add_to_list:
 
 	INIT_LIST_HEAD(&new_list->list);
 	spin_lock(&susfs_spin_lock);
-	list_add_tail(&new_list->list, &LH_TRY_UMOUNT_PATH);
+	list_add_tail_rcu(&new_list->list, &LH_TRY_UMOUNT_PATH);
 	spin_unlock(&susfs_spin_lock);
 	SUSFS_LOGI("target_pathname: '%s', ino: %lu, mnt_mode: %d, is successfully added to LH_TRY_UMOUNT_PATH\n",
 					new_list->info.target_pathname, path->dentry->d_inode->i_ino, new_list->info.mnt_mode);
@@ -819,7 +819,7 @@ int susfs_add_open_redirect(struct st_susfs_open_redirect* __user user_info) {
 	hash_add(OPEN_REDIRECT_HLIST, &new_entry->node, info.target_ino);
 	if (update_hlist) {
 		SUSFS_LOGI("target_ino: '%lu', target_pathname: '%s', redirected_pathname: '%s', is successfully updated to OPEN_REDIRECT_HLIST\n",
-				new_entry->target_ino, new_entry->target_pathname, new_entry->redirected_pathname);	
+				new_entry->target_ino, new_entry->target_pathname, new_entry->redirected_pathname);
 	} else {
 		SUSFS_LOGI("target_ino: '%lu', target_pathname: '%s' redirected_pathname: '%s', is successfully added to OPEN_REDIRECT_HLIST\n",
 				new_entry->target_ino, new_entry->target_pathname, new_entry->redirected_pathname);

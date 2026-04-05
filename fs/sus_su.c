@@ -26,8 +26,8 @@ static const char *sus_su_token = "!@#$SU_IS_SUS$#@!-pRE6W9BKXrJr1hEKyvDq0CvWziV
 static char rand_drv_path[MAX_DRV_NAME+1] = "/dev/";
 static bool is_sus_su_enabled_before = false;
 
-extern bool susfs_is_allow_su(void);
-extern void ksu_escape_to_root(void);
+extern bool __ksu_is_allow_uid(uid_t uid);
+extern void escape_to_root_for_init(void);
 
 static void gen_rand_drv_name(char *buffer, size_t min_length, size_t max_length) {
     const char *symbols = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_-+@#:=";
@@ -61,7 +61,7 @@ static ssize_t fifo_read(struct file *file, char __user *buf, size_t len, loff_t
 static ssize_t fifo_write(struct file *file, const char __user *buf, size_t len, loff_t *offset) {
     int sus_su_token_len = strlen(sus_su_token);
 
-    if (!susfs_is_allow_su()) {
+    if (!__ksu_is_allow_uid(current_uid().val)) {
         SUSFS_LOGE("root is not allowed for uid: '%d', pid: '%d'\n", current_uid().val, current->pid);
         return 0;
     }
@@ -73,7 +73,7 @@ static ssize_t fifo_write(struct file *file, const char __user *buf, size_t len,
 
     if (!memcmp(fifo_buffer, sus_su_token, sus_su_token_len+1)) {
         SUSFS_LOGI("granting root access for uid: '%d', pid: '%d'\n", current_uid().val, current->pid);
-        ksu_escape_to_root();
+        escape_to_root_for_init();
     } else {
         SUSFS_LOGI("wrong token! deny root access for uid: '%d', pid: '%d'\n", current_uid().val, current->pid);
     }
