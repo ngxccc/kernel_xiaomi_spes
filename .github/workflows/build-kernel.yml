@@ -41,24 +41,16 @@ jobs:
         uses: actions/checkout@main
         with:
           submodules: 'recursive'
-          fetch-depth: 0
+          fetch-depth: 1
           fetch-tags: false
 
-      - name: 🔖 Pin KernelSU-Next Submodule Tag
+      - name: 🔖 Sync KernelSU-Next Via Script
         env:
           KSU_SUBMODULE_TAG: ${{ github.event.inputs.ksu_submodule_tag || 'v3.1.0-legacy-susfs' }}
         run: |
-          if [ ! -d "KernelSU-Next/.git" ] && [ ! -f "KernelSU-Next/.git" ]; then
-            echo "❌ KernelSU-Next submodule not found"
-            exit 1
-          fi
-
-          echo "📥 Fetching KernelSU-Next tag: ${KSU_SUBMODULE_TAG}"
-          git -C KernelSU-Next fetch --no-tags --depth=1 origin \
-            "+refs/tags/${KSU_SUBMODULE_TAG}:refs/tags/${KSU_SUBMODULE_TAG}"
-
-          echo "🔐 Checking out KernelSU-Next at tag: ${KSU_SUBMODULE_TAG}"
-          git -C KernelSU-Next checkout --force --detach "refs/tags/${KSU_SUBMODULE_TAG}"
+          echo "📌 Using KSU tag: ${KSU_SUBMODULE_TAG}"
+          bash ./scripts/kernel_su_next_setup.sh "${KSU_SUBMODULE_TAG}"
+          git -C KernelSU-Next rev-parse --short HEAD
 
       - name: 🧹 Aggressive Disk Cleanup
         run: |
