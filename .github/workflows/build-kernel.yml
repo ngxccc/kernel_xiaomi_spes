@@ -40,8 +40,8 @@ jobs:
       - name: 📥 Checkout Source Code
         uses: actions/checkout@main
         with:
-          submodules: 'recursive'
-          fetch-depth: 1
+          submodules: false
+          fetch-depth: 0
           fetch-tags: false
 
       - name: 🔖 Sync KernelSU-Next Via Script
