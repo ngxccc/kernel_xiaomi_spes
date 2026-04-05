@@ -21,7 +21,12 @@
 #endif
 #include <linux/ptrace.h>
 
+#include <linux/version.h>
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 0, 0)
+#include "security/selinux/include/objsec.h"
+#else
 #include "objsec.h"
+#endif
 
 #include "allowlist.h"
 #include "feature.h"
@@ -83,8 +88,8 @@ static char __user *ksud_user_path(void)
 	return userspace_stack_buffer(ksud_path, sizeof(ksud_path));
 }
 
-int ksu_handle_faccessat(int *dfd, const char __user **filename_user,
-		int *mode, int *__unused_flags)
+int ksu_handle_faccessat(int *dfd, const char __user **filename_user, int *mode,
+			 int *__unused_flags)
 {
 	const char su[] = SU_PATH;
 
@@ -96,11 +101,11 @@ int ksu_handle_faccessat(int *dfd, const char __user **filename_user,
 	memset(path, 0, sizeof(path));
 	strncpy_from_user_nofault(path, *filename_user, sizeof(path));
 
-    if (unlikely(!memcmp(path, su, sizeof(su)))) {
-        write_sulog('a');
-        pr_info("faccessat su->sh!\n");
-        *filename_user = sh_user_path();
-    }
+	if (unlikely(!memcmp(path, su, sizeof(su)))) {
+		write_sulog('a');
+		pr_info("faccessat su->sh!\n");
+		*filename_user = sh_user_path();
+	}
 
 	return 0;
 }
@@ -122,18 +127,18 @@ int ksu_handle_stat(int *dfd, const char __user **filename_user, int *flags)
 	memset(path, 0, sizeof(path));
 	strncpy_from_user_nofault(path, *filename_user, sizeof(path));
 
-    if (unlikely(!memcmp(path, su, sizeof(su)))) {
-        write_sulog('s');
-        pr_info("newfstatat su->sh!\n");
-        *filename_user = sh_user_path();
-    }
+	if (unlikely(!memcmp(path, su, sizeof(su)))) {
+		write_sulog('s');
+		pr_info("newfstatat su->sh!\n");
+		*filename_user = sh_user_path();
+	}
 
 	return 0;
 }
 
 int ksu_handle_execve_sucompat(const char __user **filename_user,
-				void *__never_use_argv, void *__never_use_envp,
-				int *__never_use_flags)
+			       void *__never_use_argv, void *__never_use_envp,
+			       int *__never_use_flags)
 {
 	const char su[] = SU_PATH;
 	const char __user *fn;
@@ -173,10 +178,10 @@ int ksu_handle_execve_sucompat(const char __user **filename_user,
 	if (likely(memcmp(path, su, sizeof(su))))
 		return 0;
 
-    write_sulog('x');
+	write_sulog('x');
 
-    pr_info("sys_execve su found\n");
-    *filename_user = ksud_user_path();
+	pr_info("sys_execve su found\n");
+	*filename_user = ksud_user_path();
 
 	escape_with_root_profile();
 
