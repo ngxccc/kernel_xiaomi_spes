@@ -4,6 +4,15 @@ on:
   push:
     branches: [ "main" ]
   workflow_dispatch: # Manual trigger FTW
+    inputs:
+      build_mode:
+        description: "Build mode for scripts/build_kernel.sh"
+        type: choice
+        required: false
+        default: "clean"
+        options:
+          - clean
+          - fast
 
 # Ensure only one job runs at a time for this workflow to avoid cache race conditions
 concurrency:
@@ -85,6 +94,8 @@ jobs:
           ./scripts/apply_kernel_patch.sh "$PATCH_FILE"
 
       - name: 🔥 Start Kernel Compilation
+        env:
+          BUILD_MODE: ${{ github.event.inputs.build_mode || 'clean' }}
         run: |
           export KBUILD_BUILD_USER="n_gxc"
           export KBUILD_BUILD_HOST="Github-Actions"
@@ -96,7 +107,7 @@ jobs:
           ccache -z # Zero out stats
 
           ulimit -n 65535
-          ./scripts/build_kernel.sh clean
+          ./scripts/build_kernel.sh "$BUILD_MODE"
 
           # Print cache stats after build
           echo "📊 Ccache Stats:"
