@@ -63,7 +63,7 @@ static void remove_uid_from_arr(uid_t uid)
     }
 }
 
-static void init_default_profiles()
+static void init_default_profiles(void)
 {
 	kernel_cap_t full_cap = CAP_FULL_SET;
 
@@ -433,7 +433,7 @@ out:
     kfree(_cb);
 }
 
-void ksu_persistent_allow_list()
+void ksu_persistent_allow_list(void)
 {
 	struct task_struct *tsk;
 
@@ -459,7 +459,7 @@ put_task:
 	put_task_struct(tsk);
 }
 
-void ksu_load_allow_list()
+void ksu_load_allow_list(void)
 {
 	loff_t off = 0;
 	ssize_t ret = 0;

@@ -5,6 +5,7 @@
  *  Copyright (C) 1991, 1992  Linus Torvalds
  */
 
+#include <linux/kconfig.h>
 #include <linux/slab.h>
 #include <linux/stat.h>
 #include <linux/sched/xacct.h>
@@ -26,7 +27,7 @@
 #include <asm/unistd.h>
 
 #ifdef CONFIG_KSU_MANUAL_HOOK
-#include "../drivers/kernelsu/ksu.h"
+#include "drivers/kernelsu/ksud.c"
 #endif
 
 const struct file_operations generic_ro_fops = {
@@ -449,10 +450,11 @@ EXPORT_SYMBOL(kernel_read);
 
 ssize_t vfs_read(struct file *file, char __user *buf, size_t count, loff_t *pos)
 {
-#ifdef CONFIG_KSU_MANUAL_HOOK
-	ksu_handle_vfs_read(&file, buf, count, pos);
-#endif
 	ssize_t ret;
+
+#ifdef CONFIG_KSU_MANUAL_HOOK
+	ksu_handle_vfs_read(&file, &buf, &count, &pos);
+#endif
 
 	if (!(file->f_mode & FMODE_READ))
 		return -EBADF;
@@ -496,7 +498,7 @@ static ssize_t new_sync_write(struct file *filp, const char __user *buf,
 	return ret;
 }
 
-ssize_t __vfs_write(struct file *file, const char __user *p, size_t count,
+static ssize_t __vfs_write(struct file *file, const char __user *p, size_t count,
 		    loff_t *pos)
 {
 	if (file->f_op->write)

@@ -21,7 +21,6 @@
 #include "allowlist.h"
 #include "app_profile.h"
 #include "arch.h"
-#include "kernel_compat.h"
 #include "klog.h" // IWYU pragma: keep
 #include "selinux/selinux.h"
 #include "su_mount_ns.h"
@@ -254,7 +253,7 @@ void disable_seccomp(void)
 #endif
 	current->seccomp.mode = 0;
 	current->seccomp.filter = NULL;
-	
+
     spin_unlock_irq(&current->sighand->siglock);
 
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 9, 0) ||                          \

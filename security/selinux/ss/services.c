@@ -39,6 +39,7 @@
  *	it under the terms of the GNU General Public License as published by
  *	the Free Software Foundation, version 2.
  */
+#include "av_permissions.h"
 #include <linux/kernel.h>
 #include <linux/slab.h>
 #include <linux/string.h>

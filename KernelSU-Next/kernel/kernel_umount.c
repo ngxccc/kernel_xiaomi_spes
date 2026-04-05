@@ -1,3 +1,4 @@
+#include "KernelSU-Next/kernel/kernel_compat.h"
 #include <linux/sched.h>
 #include <linux/slab.h>
 #include <linux/task_work.h>
@@ -9,6 +10,7 @@
 #include <linux/path.h>
 #include <linux/printk.h>
 #include <linux/types.h>
+#include <linux/version.h>
 #ifndef KSU_HAS_PATH_UMOUNT
 #include <linux/syscalls.h>
 #endif
@@ -20,7 +22,6 @@
 #include "feature.h"
 #include "ksud.h"
 #include "ksu.h"
-#include "kernel_compat.h"
 
 #ifndef CONFIG_KSU_SUSFS
 static bool ksu_kernel_umount_enabled = true;
@@ -100,7 +101,7 @@ void try_umount(const char *mnt, int flags)
 		return;
 	}
 #ifndef KSU_HAS_PATH_UMOUNT
-    ksu_umount_mnt(mnt, &path, flags);
+	ksu_umount_mnt(mnt, &path, flags);
 #else
 	ksu_umount_mnt(&path, flags);
 #endif
@@ -116,13 +117,14 @@ static void umount_tw_func(struct callback_head *cb)
 	struct umount_tw *tw = container_of(cb, struct umount_tw, cb);
 	const struct cred *saved = override_creds(ksu_cred);
 
-    struct mount_entry *entry;
-    down_read(&mount_list_lock);
-    list_for_each_entry(entry, &mount_list, list) {
-        pr_info("%s: unmounting: %s flags 0x%x\n", __func__, entry->umountable, entry->flags);
-        try_umount(entry->umountable, entry->flags);
-    }
-    up_read(&mount_list_lock);
+	struct mount_entry *entry;
+	down_read(&mount_list_lock);
+	list_for_each_entry (entry, &mount_list, list) {
+		pr_info("%s: unmounting: %s flags 0x%x\n", __func__,
+			entry->umountable, entry->flags);
+		try_umount(entry->umountable, entry->flags);
+	}
+	up_read(&mount_list_lock);
 
 	revert_creds(saved);
 
@@ -146,15 +148,15 @@ int ksu_handle_umount(uid_t old_uid, uid_t new_uid)
 		return 0;
 	}
 
-    // There are 5 scenarios:
-    // 1. Normal app: zygote -> appuid
-    // 2. Isolated process forked from zygote: zygote -> isolated_process
-    // 3. App zygote forked from zygote: zygote -> appuid
-    // 4. Isolated process froked from app zygote: appuid -> isolated_process (already handled by 3)
-    // 5. Isolated process froked from webview zygote (no need to handle, app cannot run custom code)
-    if (!is_appuid(new_uid) && !is_isolated_process(new_uid)) {
-        return 0;
-    }
+	// There are 5 scenarios:
+	// 1. Normal app: zygote -> appuid
+	// 2. Isolated process forked from zygote: zygote -> isolated_process
+	// 3. App zygote forked from zygote: zygote -> appuid
+	// 4. Isolated process froked from app zygote: appuid -> isolated_process (already handled by 3)
+	// 5. Isolated process froked from webview zygote (no need to handle, app cannot run custom code)
+	if (!is_appuid(new_uid) && !is_isolated_process(new_uid)) {
+		return 0;
+	}
 
 	if (!ksu_uid_should_umount(new_uid) && !is_isolated_process(new_uid)) {
 		return 0;

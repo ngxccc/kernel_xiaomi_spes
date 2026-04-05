@@ -35,7 +35,7 @@
 #include "internal.h"
 
 #ifdef CONFIG_KSU_MANUAL_HOOK
-#include "../drivers/kernelsu/ksu.h"
+#include "../drivers/kernelsu/sucompat.c"
 #endif
 
 int do_truncate2(struct vfsmount *mnt, struct dentry *dentry, loff_t length,
@@ -358,9 +358,6 @@ SYSCALL_DEFINE4(fallocate, int, fd, int, mode, loff_t, offset, loff_t, len)
  */
 long do_faccessat(int dfd, const char __user *filename, int mode)
 {
-#ifdef CONFIG_KSU_MANUAL_HOOK
-	ksu_handle_faccessat(&dfd, &filename, &mode, NULL);
-#endif
 	const struct cred *old_cred;
 	struct cred *override_cred;
 	struct path path;
@@ -368,6 +365,10 @@ long do_faccessat(int dfd, const char __user *filename, int mode)
 	struct vfsmount *mnt;
 	int res;
 	unsigned int lookup_flags = LOOKUP_FOLLOW;
+
+#ifdef CONFIG_KSU_MANUAL_HOOK
+	ksu_handle_faccessat(&dfd, &filename, &mode, NULL);
+#endif
 
 	if (mode & ~S_IRWXO) /* where's F_OK, X_OK, W_OK, R_OK? */
 		return -EINVAL;

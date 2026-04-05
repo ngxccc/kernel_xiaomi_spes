@@ -1,8 +1,0 @@
-{
-  "files.associations": {
-    "Kconfig": "plaintext",
-    "Kconfig.*": "plaintext",
-    "*.Kconfig": "plaintext",
-    "*defconfig": "plaintext"
-  }
-}

@@ -8,6 +8,8 @@ cd "$KERNEL_ROOT"
 . "$KERNEL_ROOT/scripts/kernel_build_common.sh"
 
 MODE="${1:-clean}"
+GEN_COMPILE_COMMANDS="${GEN_COMPILE_COMMANDS:-1}"
+BUILD_ATTEMPTED=0
 
 case "$MODE" in
 	clean|fast)
@@ -17,6 +19,38 @@ case "$MODE" in
 		exit 1
 		;;
 esac
+
+if [[ "$GEN_COMPILE_COMMANDS" != "0" && "$GEN_COMPILE_COMMANDS" != "1" ]]; then
+	echo "❌ Invalid GEN_COMPILE_COMMANDS value: $GEN_COMPILE_COMMANDS"
+	echo "Use GEN_COMPILE_COMMANDS=1 (enabled) or GEN_COMPILE_COMMANDS=0 (disabled)"
+	exit 1
+fi
+
+on_exit() {
+	local build_status="$1"
+	local gen_status=0
+
+	if [[ "$BUILD_ATTEMPTED" == "1" && "$GEN_COMPILE_COMMANDS" == "1" ]]; then
+		echo "🗺️ Generating compile_commands.json from $COMPILE_COMMANDS_DIR..."
+		set +e
+		python3 scripts/gen_compile_commands.py \
+			--directory "$COMPILE_COMMANDS_DIR" \
+			--output "$COMPILE_COMMANDS_OUT"
+		gen_status=$?
+		set -e
+
+		if [[ "$gen_status" -eq 0 ]]; then
+			echo "✅ compile_commands generated: $COMPILE_COMMANDS_OUT"
+		else
+			echo "⚠️ Failed to generate compile_commands (exit $gen_status), keeping build status: $build_status"
+		fi
+	fi
+
+	return "$build_status"
+}
+
+trap 'on_exit "$?"' EXIT
+
 if command -v ccache >/dev/null 2>&1; then
 	export CC="${CC:-ccache clang}"
 else
@@ -74,6 +108,8 @@ clean_source_tree_state() {
 		find "$KERNEL_ROOT" -maxdepth 1 -type f -name '.tmp_*' -delete
 	fi
 }
+
+BUILD_ATTEMPTED=1
 
 if [[ "$MODE" == "clean" ]]; then
 	remove_dir "$OUT_DIR"

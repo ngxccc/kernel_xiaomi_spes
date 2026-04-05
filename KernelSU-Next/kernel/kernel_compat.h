@@ -1,11 +1,10 @@
 #ifndef __KSU_H_KERNEL_COMPAT
 #define __KSU_H_KERNEL_COMPAT
 
+#include "linux/uaccess.h"
 #include <linux/fs.h>
 #include <linux/version.h>
 #include <linux/task_work.h>
-#include "ss/policydb.h"
-#include "linux/key.h"
 
 /*
  * Adapt to Huawei HISI kernel without affecting other kernels ,
@@ -47,7 +46,7 @@ extern long ksu_copy_from_user_nofault(void *dst, const void __user *src, size_t
  * paramters are the same as copy_from_user
  * 0 = success
  */
-static long ksu_copy_from_user_retry(void *to, 
+static long ksu_copy_from_user_retry(void *to,
 		const void __user *from, unsigned long count)
 {
 	long ret = ksu_copy_from_user_nofault(to, from, count);

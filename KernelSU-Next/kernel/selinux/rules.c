@@ -34,7 +34,7 @@ static struct policydb *get_policydb(void)
 
 static DEFINE_MUTEX(ksu_rules);
 
-void apply_kernelsu_rules()
+void apply_kernelsu_rules(void)
 {
     struct policydb *db;
 
@@ -133,7 +133,7 @@ void apply_kernelsu_rules()
     // Allow system server kill su process
     ksu_allow(db, "system_server", KERNEL_SU_DOMAIN, "process", "getpgid");
     ksu_allow(db, "system_server", KERNEL_SU_DOMAIN, "process", "sigkill");
-    
+
 #ifdef CONFIG_KSU_SUSFS
     // Allow umount in zygote process without installing zygisk
     //ksu_allow(db, "zygote", "labeledfs", "filesystem", "unmount");
@@ -193,7 +193,7 @@ extern int avc_ss_reset(u32 seqno);
 extern int avc_ss_reset(struct selinux_avc *avc, u32 seqno);
 #endif
 // reset avc cache table, otherwise the new rules will not take effect if already denied
-static void reset_avc_cache()
+static void reset_avc_cache(void)
 {
 #if ((!defined(KSU_COMPAT_USE_SELINUX_STATE)) || \
 	LINUX_VERSION_CODE >= KERNEL_VERSION(6, 4, 0))

@@ -23,31 +23,31 @@
 #ifndef _SS_AVTAB_H_
 #define _SS_AVTAB_H_
 
-#include "security.h"
+#include "../include/security.h"
 #include <linux/flex_array.h>
 
 struct avtab_key {
-	u16 source_type;	/* source type */
-	u16 target_type;	/* target type */
-	u16 target_class;	/* target object class */
-#define AVTAB_ALLOWED		0x0001
-#define AVTAB_AUDITALLOW	0x0002
-#define AVTAB_AUDITDENY		0x0004
-#define AVTAB_AV		(AVTAB_ALLOWED | AVTAB_AUDITALLOW | AVTAB_AUDITDENY)
-#define AVTAB_TRANSITION	0x0010
-#define AVTAB_MEMBER		0x0020
-#define AVTAB_CHANGE		0x0040
-#define AVTAB_TYPE		(AVTAB_TRANSITION | AVTAB_MEMBER | AVTAB_CHANGE)
+	u16 source_type; /* source type */
+	u16 target_type; /* target type */
+	u16 target_class; /* target object class */
+#define AVTAB_ALLOWED 0x0001
+#define AVTAB_AUDITALLOW 0x0002
+#define AVTAB_AUDITDENY 0x0004
+#define AVTAB_AV (AVTAB_ALLOWED | AVTAB_AUDITALLOW | AVTAB_AUDITDENY)
+#define AVTAB_TRANSITION 0x0010
+#define AVTAB_MEMBER 0x0020
+#define AVTAB_CHANGE 0x0040
+#define AVTAB_TYPE (AVTAB_TRANSITION | AVTAB_MEMBER | AVTAB_CHANGE)
 /* extended permissions */
-#define AVTAB_XPERMS_ALLOWED	0x0100
-#define AVTAB_XPERMS_AUDITALLOW	0x0200
-#define AVTAB_XPERMS_DONTAUDIT	0x0400
-#define AVTAB_XPERMS		(AVTAB_XPERMS_ALLOWED | \
-				AVTAB_XPERMS_AUDITALLOW | \
-				AVTAB_XPERMS_DONTAUDIT)
-#define AVTAB_ENABLED_OLD   0x80000000 /* reserved for used in cond_avtab */
-#define AVTAB_ENABLED		0x8000 /* reserved for used in cond_avtab */
-	u16 specified;	/* what field is specified */
+#define AVTAB_XPERMS_ALLOWED 0x0100
+#define AVTAB_XPERMS_AUDITALLOW 0x0200
+#define AVTAB_XPERMS_DONTAUDIT 0x0400
+#define AVTAB_XPERMS                                                           \
+	(AVTAB_XPERMS_ALLOWED | AVTAB_XPERMS_AUDITALLOW |                      \
+	 AVTAB_XPERMS_DONTAUDIT)
+#define AVTAB_ENABLED_OLD 0x80000000 /* reserved for used in cond_avtab */
+#define AVTAB_ENABLED 0x8000 /* reserved for used in cond_avtab */
+	u16 specified; /* what field is specified */
 };
 
 /*
@@ -56,8 +56,8 @@ struct avtab_key {
  */
 struct avtab_extended_perms {
 /* These are not flags. All 256 values may be used */
-#define AVTAB_XPERMS_IOCTLFUNCTION	0x01
-#define AVTAB_XPERMS_IOCTLDRIVER	0x02
+#define AVTAB_XPERMS_IOCTLFUNCTION 0x01
+#define AVTAB_XPERMS_IOCTLDRIVER 0x02
 	/* extension of the avtab_key specified */
 	u8 specified; /* ioctl, netfilter, ... */
 	/*
@@ -85,10 +85,9 @@ struct avtab_node {
 
 struct avtab {
 	struct flex_array *htable;
-	u32 nel;	/* number of elements */
-	u32 nslot;      /* number of hash slots */
-	u32 mask;       /* mask to compute hash func */
-
+	u32 nel; /* number of elements */
+	u32 nslot; /* number of hash slots */
+	u32 mask; /* mask to compute hash func */
 };
 
 int avtab_init(struct avtab *);
@@ -107,15 +106,16 @@ int avtab_read(struct avtab *a, void *fp, struct policydb *pol);
 int avtab_write_item(struct policydb *p, struct avtab_node *cur, void *fp);
 int avtab_write(struct policydb *p, struct avtab *a, void *fp);
 
-struct avtab_node *avtab_insert_nonunique(struct avtab *h, struct avtab_key *key,
+struct avtab_node *avtab_insert_nonunique(struct avtab *h,
+					  struct avtab_key *key,
 					  struct avtab_datum *datum);
 
 struct avtab_node *avtab_search_node(struct avtab *h, struct avtab_key *key);
 
-struct avtab_node *avtab_search_node_next(struct avtab_node *node, int specified);
+struct avtab_node *avtab_search_node_next(struct avtab_node *node,
+					  int specified);
 
 #define MAX_AVTAB_HASH_BITS 16
 #define MAX_AVTAB_HASH_BUCKETS (1 << MAX_AVTAB_HASH_BITS)
 
-#endif	/* _SS_AVTAB_H_ */
-
+#endif /* _SS_AVTAB_H_ */

@@ -153,4 +153,3 @@ llvm.sh*
 !.devcontainer/
 
 !.github/
-!.vscode

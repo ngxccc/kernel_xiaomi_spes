@@ -24,6 +24,7 @@
  *	as published by the Free Software Foundation.
  */
 
+#include "av_permissions.h"
 #include <linux/init.h>
 #include <linux/kd.h>
 #include <linux/kernel.h>

@@ -14,6 +14,7 @@
  *	the Free Software Foundation, version 2.
  */
 
+#include "av_permissions.h"
 #include <linux/kernel.h>
 #include <linux/pagemap.h>
 #include <linux/slab.h>

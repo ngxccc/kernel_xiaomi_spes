@@ -18,7 +18,7 @@ source "$SCRIPT_DIR/kernel_build_common.sh"
 cd "$KERNEL_ROOT"
 echo "[INFO] Working directory set to: $KERNEL_ROOT"
 
-TARGET_DEFCONFIG_PATH="arch/$ARCH/configs/$au"
+TARGET_DEFCONFIG_PATH="arch/$ARCH/configs/$DEFCONFIG"
 
 # 3. INITIALIZATION: Clean environment and load the base configuration
 echo "[1/4] Loading base defconfig ($DEFCONFIG)..."
@@ -34,7 +34,18 @@ echo "[2/4] Injecting automated..."
 # ./scripts/config --set-str CONFIG_DEFAULT_TCP_CONG "bbr"
 # ./scripts/config --disable CONFIG_SLUB_DEBUG
 
-# ./scripts/config --file "$OUT_DIR/.config" --enable CONFIG_KSU_MANUAL_HOOK
+./scripts/config --file "$OUT_DIR/.config" --enable CONFIG_KSU_SUSFS_SUS_PATH
+./scripts/config --file "$OUT_DIR/.config" --enable CONFIG_KSU_SUSFS_SUS_MOUNT
+./scripts/config --file "$OUT_DIR/.config" --enable CONFIG_KSU_SUSFS_AUTO_ADD_SUS_BIND_MOUNT
+./scripts/config --file "$OUT_DIR/.config" --enable CONFIG_KSU_SUSFS_SUS_KSTAT
+./scripts/config --file "$OUT_DIR/.config" --enable CONFIG_KSU_SUSFS_HIDE_KSU_SUSFS_SYMBOLS
+./scripts/config --file "$OUT_DIR/.config" --enable CONFIG_KSU_SUSFS_SPOOF_CMDLINE_OR_BOOTCONFIG
+./scripts/config --file "$OUT_DIR/.config" --enable CONFIG_KSU_SUSFS_SPOOF_UNAME
+
+# Disable mấy cái tà đạo dễ gây bootloop
+./scripts/config --file "$OUT_DIR/.config" --disable CONFIG_KSU_SUSFS_SUS_OVERLAYFS
+./scripts/config --file "$OUT_DIR/.config" --disable CONFIG_KSU_SUSFS_OPEN_REDIRECT
+./scripts/config --file "$OUT_DIR/.config" --disable CONFIG_KSU_SUSFS_TRY_UMOUNT
 
 # 5. DEPENDENCY RESOLUTION & SAVING
 echo "[3/4] Resolving dependencies and generating minimal defconfig..."

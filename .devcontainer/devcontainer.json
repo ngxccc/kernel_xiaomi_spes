@@ -28,15 +28,16 @@
             "settings": {
                 // Reconfigure Clangd specifically for Kernel development
                 "clangd.arguments": [
-                    // Look for compile_commands.json in workspace root (where you run make)
-                    "--compile-commands-dir=${workspaceFolder}",
-                    "--background-index",
-                    "--clang-tidy",
-                    "--completion-style=detailed",
-                    "--header-insertion=never",
-                    // Force Clangd to run multi-threaded for faster source code scanning
-                    "-j=4"
+                  // Look for compile_commands.json in workspace root (where you run make)
+                  "--compile-commands-dir=${workspaceFolder}",
+                  "--background-index",
+                  "--clang-tidy",
+                  "--completion-style=detailed",
+                  "--header-insertion=never",
+                  // Force Clangd to run multi-threaded for faster source code scanning
+                  "-j=4"
                 ],
+                "clangd.path": "/usr/bin/clangd",
                 // Disable Microsoft's IntelliSense to let Clangd take the stage
                 "C_Cpp.intelliSenseEngine": "disabled",
 
@@ -48,6 +49,13 @@
                 },
                 "[c]": {
                     "editor.formatOnSave": true
+                },
+
+                "files.associations": {
+                  "Kconfig": "plaintext",
+                  "Kconfig.*": "plaintext",
+                  "*.Kconfig": "plaintext",
+                  "*defconfig": "plaintext"
                 },
 
                 // Default to ZSH for a better terminal experience
