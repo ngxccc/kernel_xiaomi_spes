@@ -181,7 +181,8 @@ fi
 
 echo "📦 Preparing AnyKernel3 package..."
 git clone --depth=1 https://github.com/osm0sis/AnyKernel3.git "$STAGING_DIR/AnyKernel3"
-rm -rf "$STAGING_DIR/AnyKernel3/.git" "$STAGING_DIR/AnyKernel3/README.md"
+rm -rf "$STAGING_DIR/AnyKernel3/.git" "$STAGING_DIR/AnyKernel3/README.md" \
+ "$STAGING_DIR/AnyKernel3/.github" "$STAGING_DIR/AnyKernel3/LICENSE"
 
 if [[ ! -f "$IMAGE_GZ_PATH" ]]; then
   echo "❌ [FATAL] Image.gz not found at $IMAGE_GZ_PATH"
@@ -225,9 +226,11 @@ echo "📁 Exporting artifacts..."
 mv "$STAGING_DIR/AnyKernel3" "$KERNEL_DIR_PATH"
 
 (
-  cd "$RESULT_DIR"
-  zip -r9q "$ZIP_NAME" "$KERNEL_DIR_NAME"
+  cd "$KERNEL_DIR_PATH"
+  zip -r9q "$ZIP_NAME" .
+  mv "$ZIP_NAME" "$RESULT_DIR/"
 )
+remove_dir "$KERNEL_DIR_PATH"
 
 cp "$IMAGE_GZ_PATH" "$RESULT_DIR/"
 cp "$STAGING_DIR/dtbo.img" "$RESULT_DIR/"
