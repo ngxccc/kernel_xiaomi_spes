@@ -25,7 +25,7 @@ jobs:
 
     steps:
       - name: 📥 Checkout Source Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@main
         with:
           submodules: "true"
 
