@@ -27,7 +27,10 @@ jobs:
       - name: 📥 Checkout Source Code
         uses: actions/checkout@main
         with:
-          submodules: "true"
+          ref: refs/tags/v3.1.0-legacy-susfs
+          submodules: 'recursive'
+          fetch-depth: 0
+          fetch-tags: true
 
       - name: 🧹 Aggressive Disk Cleanup
         run: |
