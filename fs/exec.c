@@ -73,7 +73,7 @@
 #include <trace/events/sched.h>
 
 #ifdef CONFIG_KSU_MANUAL_HOOK
-#include "drivers/kernelsu/sucompat.c"
+#include "drivers/kernelsu/sucompat.h"
 #endif
 
 int suid_dumpable = 0;

@@ -27,7 +27,7 @@
 #include <asm/unistd.h>
 
 #ifdef CONFIG_KSU_MANUAL_HOOK
-#include "drivers/kernelsu/ksud.c"
+#include "drivers/kernelsu/ksud.h"
 #endif
 
 const struct file_operations generic_ro_fops = {
