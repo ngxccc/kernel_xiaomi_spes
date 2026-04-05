@@ -92,12 +92,12 @@ int ksu_handle_faccessat(int *dfd, const char __user **filename_user, int *mode,
 			 int *__unused_flags)
 {
 	const char su[] = SU_PATH;
+	char path[sizeof(su) + 1];
 
 	if (!ksu_is_allow_uid_for_current(current_uid().val)) {
 		return 0;
 	}
 
-	char path[sizeof(su) + 1];
 	memset(path, 0, sizeof(path));
 	strncpy_from_user_nofault(path, *filename_user, sizeof(path));
 
@@ -114,6 +114,7 @@ int ksu_handle_stat(int *dfd, const char __user **filename_user, int *flags)
 {
 	// const char sh[] = SH_PATH;
 	const char su[] = SU_PATH;
+	char path[sizeof(su) + 1];
 
 	if (!ksu_is_allow_uid_for_current(current_uid().val)) {
 		return 0;
@@ -123,7 +124,6 @@ int ksu_handle_stat(int *dfd, const char __user **filename_user, int *flags)
 		return 0;
 	}
 
-	char path[sizeof(su) + 1];
 	memset(path, 0, sizeof(path));
 	strncpy_from_user_nofault(path, *filename_user, sizeof(path));
 
@@ -219,6 +219,8 @@ int ksu_handle_execveat_sucompat(int *fd, struct filename **filename_ptr,
 
 int __ksu_handle_devpts(struct inode *inode)
 {
+	uid_t uid = current_uid().val;
+
 #ifndef KSU_KPROBES_HOOK
 	if (!ksu_su_compat_enabled)
 		return 0;
@@ -228,7 +230,6 @@ int __ksu_handle_devpts(struct inode *inode)
 		return 0;
 	}
 
-	uid_t uid = current_uid().val;
 	if (uid % 100000 < 10000) {
 		// not untrusted_app, ignore it
 		return 0;
