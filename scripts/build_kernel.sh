@@ -47,7 +47,6 @@ on_exit() {
 	fi
 
   # Update the defconfig with the final build configuration (minimal format)
-  TARGET_DEFCONFIG_PATH="arch/$ARCH/configs/$DEFCONFIG"
   if [[ -d "$(dirname "$TARGET_DEFCONFIG_PATH")" ]]; then
     echo "📝 Generating minimal defconfig: $TARGET_DEFCONFIG_PATH"
     make -s O="$OUT_DIR" LLVM="$LLVM" LLVM_IAS="$LLVM_IAS" savedefconfig
@@ -127,52 +126,114 @@ clean_source_tree_state() {
 BUILD_ATTEMPTED=1
 
 if [[ "$MODE" == "clean" ]]; then
-	remove_dir "$OUT_DIR"
-	ensure_dir "$OUT_DIR"
-	make -s O="$OUT_DIR" LLVM="$LLVM" LLVM_IAS="$LLVM_IAS" KBUILD_DEFCONFIG="$DEFCONFIG" defconfig
+  remove_dir "$OUT_DIR"
+  ensure_dir "$OUT_DIR"
+  make -s O="$OUT_DIR" LLVM="$LLVM" LLVM_IAS="$LLVM_IAS" KBUILD_DEFCONFIG="$DEFCONFIG" defconfig
 else
-	if [[ ! -f "$OUT_DIR/.config" ]]; then
-		echo "❌ fast mode requires an existing config in $OUT_DIR/.config"
-		echo "Run: $0 clean"
-		exit 1
-	fi
-	clean_source_tree_state
+  if [[ ! -f "$OUT_DIR/.config" ]]; then
+    echo "❌ [FATAL] Fast mode requires an existing config in $OUT_DIR/.config"
+    exit 1
+  fi
+  clean_source_tree_state
 fi
 
 make -s O="$OUT_DIR" LLVM="$LLVM" LLVM_IAS="$LLVM_IAS" olddefconfig
 
-# Apply config patches automatically
 echo "⚙️ Applying config patches..."
 if "$KERNEL_ROOT/scripts/auto_patch_config.sh" "$OUT_DIR/.config"; then
-	# Refresh config after patches
-	make -s O="$OUT_DIR" LLVM="$LLVM" LLVM_IAS="$LLVM_IAS" olddefconfig
-	echo "✅ Config patches applied and validated"
-else
-	echo "⚠️ Config patching failed but continuing build..."
+  make -s O="$OUT_DIR" LLVM="$LLVM" LLVM_IAS="$LLVM_IAS" olddefconfig
+  echo "✅ Config patches applied"
 fi
 
+# Calculate dynamic build jobs based on total system memory to prevent OOM kills
 TOTAL_MEM_GB=$(awk '/MemTotal/ {print int($2/1024/1024)}' /proc/meminfo)
 CPU_CORES=$(nproc --all)
 if [[ -n "${JOBS:-}" ]]; then
-	BUILD_JOBS="$JOBS"
+  BUILD_JOBS="$JOBS"
 elif [[ "$TOTAL_MEM_GB" -le 8 ]]; then
-	BUILD_JOBS=$((CPU_CORES / 2))
+  BUILD_JOBS=$((CPU_CORES / 2))
 elif [[ "$TOTAL_MEM_GB" -le 12 ]]; then
-	BUILD_JOBS=$((CPU_CORES * 2 / 3))
+  BUILD_JOBS=$((CPU_CORES * 2 / 3))
 else
-	BUILD_JOBS="$CPU_CORES"
+  BUILD_JOBS="$CPU_CORES"
 fi
-
 [[ "$BUILD_JOBS" -lt 1 ]] && BUILD_JOBS=1
 
-echo "🏗️ Building $TARGET | mode=$MODE | jobs=$BUILD_JOBS | out=$OUT_DIR"
+echo "🏗️ Building | mode=$MODE | jobs=$BUILD_JOBS | out=$OUT_DIR"
 make -s -j"$BUILD_JOBS" O="$OUT_DIR" LLVM="$LLVM" LLVM_IAS="$LLVM_IAS" "$TARGET"
 
-IMAGE_PATH="$OUT_DIR/arch/arm64/boot/$TARGET"
-if [[ ! -f "$IMAGE_PATH" ]]; then
-	echo "❌ Build finished but image not found: $IMAGE_PATH"
-	exit 1
+# --- PACKAGING PHASE ---
+# Use a temporary staging directory to avoid polluting the final output dir during packaging
+STAGING_DIR="$OUT_DIR/staging_ak3"
+remove_dir "$STAGING_DIR"
+ensure_dir "$STAGING_DIR"
+remove_dir "$RESULT_DIR"
+ensure_dir "$RESULT_DIR"
+
+echo "🧩 Packing dtbo.img..."
+if compgen -G "$DTBO_DIR/spes*.dtbo" >/dev/null; then
+  python3 scripts/mkdtboimg.py create "$STAGING_DIR/dtbo.img" "$DTBO_DIR"/spes*.dtbo
+  echo "✅ dtbo.img packed"
+else
+  echo "❌ [FATAL] No spes*.dtbo files found in: $DTBO_DIR"
+  exit 1
 fi
 
-echo "✅ Build complete: $IMAGE_PATH"
+echo "📦 Preparing AnyKernel3 package..."
+git clone --depth=1 https://github.com/osm0sis/AnyKernel3.git "$STAGING_DIR/AnyKernel3"
+rm -rf "$STAGING_DIR/AnyKernel3/.git" "$STAGING_DIR/AnyKernel3/README.md"
 
+if [[ ! -f "$IMAGE_GZ_PATH" ]]; then
+  echo "❌ [FATAL] Image.gz not found at $IMAGE_GZ_PATH"
+  exit 1
+fi
+
+cp "$IMAGE_GZ_PATH" "$STAGING_DIR/AnyKernel3/"
+cp "$STAGING_DIR/dtbo.img" "$STAGING_DIR/AnyKernel3/"
+
+# Generate AnyKernel3 init script dynamically
+cat << 'EOF' > "$STAGING_DIR/AnyKernel3/anykernel.sh"
+### AnyKernel3 Ramdisk Mod Script
+properties() { '
+kernel.string=Spes Custom Kernel by n_gxc
+do.devicecheck=1
+do.modules=0
+do.systemless=0
+do.cleanup=1
+do.cleanuponabort=0
+device.name1=spes
+device.name2=spesn
+'; }
+
+block=boot;
+is_slot_device=1;
+ramdisk_compression=auto;
+patch_vbmeta_flag=auto;
+
+. tools/ak3-core.sh;
+dump_boot;
+write_boot;
+flash_dtbo;
+EOF
+
+# Create final flashable zip and isolated kernel directory
+KERNEL_DIR_NAME="Spes-$(date +'%Y%m%d-%H%M')"
+KERNEL_DIR_PATH="$RESULT_DIR/$KERNEL_DIR_NAME"
+ZIP_NAME="$KERNEL_DIR_NAME.zip"
+
+echo "📁 Exporting artifacts..."
+mv "$STAGING_DIR/AnyKernel3" "$KERNEL_DIR_PATH"
+
+(
+  cd "$RESULT_DIR"
+  zip -r9q "$ZIP_NAME" "$KERNEL_DIR_NAME"
+)
+
+cp "$IMAGE_GZ_PATH" "$RESULT_DIR/"
+cp "$STAGING_DIR/dtbo.img" "$RESULT_DIR/"
+
+# Cleanup staging
+remove_dir "$STAGING_DIR"
+
+echo "🎉 Build & Packaging Successful!"
+echo "📌 ZIP: $RESULT_DIR/$ZIP_NAME"

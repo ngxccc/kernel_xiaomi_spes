@@ -14,3 +14,9 @@ OUT_DIR="${OUT_DIR:-$KERNEL_ROOT/out}"
 TARGET="${TARGET:-Image.gz-dtb}"
 COMPILE_COMMANDS_DIR="${COMPILE_COMMANDS_DIR:-$OUT_DIR}"
 COMPILE_COMMANDS_OUT="${COMPILE_COMMANDS_OUT:-$KERNEL_ROOT/compile_commands.json}"
+
+# Common artifact/config paths used by build scripts
+TARGET_DEFCONFIG_PATH="${TARGET_DEFCONFIG_PATH:-arch/$ARCH/configs/$DEFCONFIG}"
+IMAGE_GZ_PATH="${IMAGE_GZ_PATH:-$OUT_DIR/arch/arm64/boot/Image.gz}"
+DTBO_DIR="${DTBO_DIR:-$OUT_DIR/arch/arm64/boot/dts/vendor/qcom}"
+DTBO_IMAGE="${DTBO_IMAGE:-$RESULT_DIR/dtbo.img}"
