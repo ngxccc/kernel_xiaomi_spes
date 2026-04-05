@@ -68,6 +68,19 @@ jobs:
           CLANG_VERSION=$(clang --version | head -n1 | sed -E 's/.*version ([0-9]+(\.[0-9]+)*).*/\1/')
           echo "CLANG_VERSION=${CLANG_VERSION}" >> "$GITHUB_ENV"
 
+      - name: 🩹 Apply Kernel Patch
+        run: |
+          shopt -s nullglob
+          PATCH_FILES=(kernel-patch/*.patch)
+          if [ ${#PATCH_FILES[@]} -eq 0 ]; then
+            echo "❌ No patch file found in kernel-patch/"
+            exit 1
+          fi
+
+          PATCH_FILE="$(ls -1t kernel-patch/*.patch | head -n1)"
+          echo "📦 Applying patch: $PATCH_FILE"
+          ./scripts/apply_kernel_patch.sh "$PATCH_FILE"
+
       - name: 🔥 Start Kernel Compilation
         run: |
           export KBUILD_BUILD_USER="n_gxc"
