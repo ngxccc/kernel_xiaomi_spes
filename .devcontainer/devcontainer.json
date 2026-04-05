@@ -55,7 +55,8 @@
                   "Kconfig": "plaintext",
                   "Kconfig.*": "plaintext",
                   "*.Kconfig": "plaintext",
-                  "*defconfig": "plaintext"
+                  "*defconfig": "plaintext",
+                  ".clangd": "plaintext"
                 },
 
                 // Default to ZSH for a better terminal experience
