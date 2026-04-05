@@ -2342,7 +2342,7 @@ index 1999af84..3de8f26b 100644
 \ No newline at end of file
 +#endif
 diff --git a/kernel/supercalls.c b/kernel/supercalls.c
-index 7b127ea6..d9c52625 100644
+index 7b127ea6..7aa6f783 100644
 --- a/kernel/supercalls.c
 +++ b/kernel/supercalls.c
 @@ -15,17 +15,25 @@
@@ -2359,7 +2359,7 @@ index 7b127ea6..d9c52625 100644
 +#ifdef CONFIG_KSU_SUSFS
 +#include <linux/susfs.h>
 +#include <linux/susfs_def.h>
-+#define SUSFS_MAGIC 0x53555346
++#define SUSFS_MAGIC 0xFAFAFAFA
 +#endif
 +
  #include "supercalls.h"
