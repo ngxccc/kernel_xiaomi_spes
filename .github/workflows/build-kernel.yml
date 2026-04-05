@@ -41,7 +41,7 @@ jobs:
         uses: actions/checkout@main
         with:
           submodules: 'recursive'
-          fetch-depth: 1
+          fetch-depth: 0
           fetch-tags: false
 
       - name: 🔖 Pin KernelSU-Next Submodule Tag
