@@ -5,10 +5,6 @@ on:
     branches: [ "main" ]
   workflow_dispatch: # Manual trigger FTW
     inputs:
-      source_ref:
-        description: "Repository ref to checkout (branch/tag/commit). Leave empty to use trigger ref"
-        required: false
-        default: ""
       ksu_submodule_tag:
         description: "KernelSU-Next submodule tag to checkout"
         required: false
