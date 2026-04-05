@@ -3,29 +3,33 @@ name: 🚀 Build spes Kernel & Notify Telegram
 on:
   push:
     branches: [ "main" ]
-  workflow_dispatch: # Allows manual triggering from the GitHub Actions tab
+  workflow_dispatch: # Manual trigger FTW
+
+# Ensure only one job runs at a time for this workflow to avoid cache race conditions
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build:
     name: 🛠️ Compile Kernel
-    runs-on: ubuntu-24.04 # Updated to 24.04 to match the DevContainer environment
+    runs-on: ubuntu-24.04
     env:
+      # Use dynamic workspace variable instead of hardcoded paths
       OUT_DIR: ${{ github.workspace }}/out
-      CCACHE_DIR: ${{ github.workspace }}/ccache
-    defaults:
-      run:
-        working-directory: /home/runner/work/kernel_xiaomi_spes/kernel_xiaomi_spes
+      CCACHE_DIR: ${{ github.workspace }}/.ccache
+      RESULT_DIR: ${{ github.workspace }}/out/result
 
+    # Removed the hardcoded working-directory. Github sets it to workspace by default.
     environment: production
 
     steps:
       - name: 📥 Checkout Source Code
-        uses: actions/checkout@main
+        uses: actions/checkout@v4
 
       - name: 🧹 Aggressive Disk Cleanup
         run: |
-          echo "[Before cleanup]"
-          df -h
+          echo "🔥 Nuke unnecessary tools to free up space..."
           sudo rm -rf /usr/local/share/boost \
                       /usr/local/lib/android \
                       /opt/hostedtoolcache/CodeQL \
@@ -34,118 +38,57 @@ jobs:
           sudo apt-get clean
           sudo rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
           mkdir -p "$OUT_DIR" "$CCACHE_DIR"
-          echo "[After cleanup]"
-          df -h
 
-      - name: ⚡ Fast Install LLVM 22
+      - name: ⚡ Fast Install LLVM Toolchain
         run: |
           wget -qO- https://apt.llvm.org/llvm-snapshot.gpg.key | sudo tee /etc/apt/trusted.gpg.d/apt.llvm.org.asc
-
           echo "deb http://apt.llvm.org/noble/ llvm-toolchain-noble-22 main" | sudo tee /etc/apt/sources.list.d/llvm.list
-
-          sudo bash -c 'echo "Acquire::Queue-Mode \"access\"; Acquire::Retries \"3\"; APT::Color \"1\"; Acquire::Languages \"none\";" > /etc/apt/apt.conf.d/99parallel'
+          sudo bash -c 'echo "Acquire::Queue-Mode \"access\"; Acquire::Retries \"3\"; APT::Color \"1\";" > /etc/apt/apt.conf.d/99parallel'
 
           sudo apt-get update -q
           sudo apt-get install -y --no-install-recommends \
-            clang-22 lld-22 llvm-22 \
-            bc bison flex libssl-dev libncurses-dev libelf-dev make gcc-aarch64-linux-gnu gcc-arm-linux-gnueabi python3 ccache
-
+            clang-22 lld-22 llvm-22 bc bison flex libssl-dev libncurses-dev \
+            libelf-dev make gcc-aarch64-linux-gnu gcc-arm-linux-gnueabi python3 ccache
           sudo ln -sf /usr/lib/llvm-22/bin/* /usr/bin/
 
       - name: 🧠 Setup Ccache
         uses: actions/cache@v5
         with:
           path: ${{ env.CCACHE_DIR }}
-          key: ${{ runner.os }}-kernel-clang-${{ github.sha }}
+          key: ccache-kernel-${{ runner.os }}-${{ github.ref_name }}-llvm22
           restore-keys: |
-            ${{ runner.os }}-kernel-clang-
+            ccache-kernel-${{ runner.os }}-${{ github.ref_name }}-
+            ccache-kernel-${{ runner.os }}-
+            ccache-kernel-
 
       - name: 🔎 Detect Clang Version
         run: |
           CLANG_VERSION=$(clang --version | head -n1 | sed -E 's/.*version ([0-9]+(\.[0-9]+)*).*/\1/')
           echo "CLANG_VERSION=${CLANG_VERSION}" >> "$GITHUB_ENV"
 
-      - name: 🔥 Start Kernel Compilation (LLVM Mode)
+      - name: 🔥 Start Kernel Compilation
         run: |
-          export CCACHE_DIR="$CCACHE_DIR"
           export KBUILD_BUILD_USER="n_gxc"
           export KBUILD_BUILD_HOST="Github-Actions"
-          ccache -M 2G >/dev/null
-          ccache -o compression=true
-          ulimit -n 65535
 
+          # Configure ccache size and ensure relative paths for hit-rate
+          ccache -M 5G
+          ccache -o compression=true
+          ccache -o base_dir=${{ github.workspace }}
+          ccache -z # Zero out stats
+
+          ulimit -n 65535
           ./scripts/build_kernel.sh clean
 
-      - name: 🧩 Pack DTBO.img
-        run: |
-          DTBO_DIR="$OUT_DIR/arch/arm64/boot/dts/vendor/qcom"
-
-          mkdir -p "$OUT_DIR/dtbo_out"
-
-          # This command collects all files with "spes" in the name and packs them into dtbo.img
-          python3 scripts/mkdtboimg.py create "$OUT_DIR/dtbo_out/dtbo.img" $DTBO_DIR/spes*.dtbo
-
-          echo "✅ Successfully packed dtbo.img!"
-          ls -lh "$OUT_DIR/dtbo_out/dtbo.img"
-
-      - name: 📦 Package with AnyKernel3
-        run: |
-          git clone --depth=1 https://github.com/osm0sis/AnyKernel3.git AnyKernel3
-          rm -rf AnyKernel3/.git AnyKernel3/README.md
-
-          if [ -f "$OUT_DIR/arch/arm64/boot/Image.gz" ]; then
-            cp "$OUT_DIR/arch/arm64/boot/Image.gz" AnyKernel3/
-          else
-            echo "❌ Error: Not found Image.gz!" && exit 1
-          fi
-
-          if [ -f "$OUT_DIR/dtbo_out/dtbo.img" ]; then
-            cp "$OUT_DIR/dtbo_out/dtbo.img" AnyKernel3/
-            echo "✅ Successfully copied dtbo.img into AnyKernel3"
-          else
-            echo "❌ Error: dtbo.img packing failed!" && exit 1
-          fi
-
-          cat << 'EOF' > AnyKernel3/anykernel.sh
-          ### AnyKernel3 Ramdisk Mod Script
-          properties() { '
-          kernel.string=Spes Custom Kernel by n_gxc
-          do.devicecheck=1
-          do.modules=0
-          do.systemless=0
-          do.cleanup=1
-          do.cleanuponabort=0
-          device.name1=spes
-          device.name2=spesn
-          supported.versions=
-          supported.patchlevels=
-          '; } # end properties
-
-          # Set up the standard partition layout for Xiaomi spes (A/B slot)
-          block=boot;
-          is_slot_device=1;
-          ramdisk_compression=auto;
-          patch_vbmeta_flag=auto;
-
-          # Load the AK3 core library
-          . tools/ak3-core.sh;
-
-          dump_boot;
-          write_boot;
-
-          # This command will automatically find dtbo.img in the zip and flash it to the dtbo partition
-          flash_dtbo;
-          EOF
-
-          cd AnyKernel3
-          zip -r9 "../Spes-Kernel-$(date +'%Y%m%d-%H%M').zip" *
-          cd ..
+          # Print cache stats after build
+          echo "📊 Ccache Stats:"
+          ccache -s
 
       - name: 📦 Upload Flashable Zip
         uses: actions/upload-artifact@v6
         with:
           name: spes-kernel-flashable
-          path: "*.zip"
+          path: ${{ env.RESULT_DIR }}/*.zip
 
       - name: 📱 Telegram Notification & File Delivery
         if: always()
@@ -160,40 +103,29 @@ jobs:
             STATUS="❌ FAILED"
           fi
 
-          # 2. Safely find the generated zip file
           shopt -s nullglob
-          ZIP_FILES=(*.zip)
+          ZIP_FILES=("$RESULT_DIR"/*.zip)
           if [ ${#ZIP_FILES[@]} -gt 0 ]; then
             ZIP_FILE="${ZIP_FILES[0]}"
+            ZIP_NAME="$(basename "$ZIP_FILE")"
           else
             ZIP_FILE=""
+            ZIP_NAME="None"
           fi
 
-          # 3. Construct the HTML formatted message
           RUN_URL="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
           MESSAGE="🚀 <b>Kernel Build Report</b>
-
           📌 <b>Status:</b> ${STATUS}
           🏗️ <b>Compiler:</b> Clang ${CLANG_VERSION:-unknown}
-          📦 <b>Artifact:</b> <code>${ZIP_FILE:-None}</code>
-          👤 <b>Built by:</b> ${GITHUB_ACTOR}
+          📦 <b>Artifact:</b> <code>${ZIP_NAME}</code>
+          🔗 <a href=\"${RUN_URL}\">View Logs</a>"
 
-          🔗 <a href=\"${RUN_URL}\">View Github Logs</a>"
-
-          # 4. Routing: Send Document on Success, Text-only on Failure
           if [ "${{ job.status }}" == "success" ] && [ -n "$ZIP_FILE" ]; then
-            echo "[INFO] Build success! Uploading $ZIP_FILE to Telegram..."
-            # Using multipart/form-data (-F) to upload binary file and caption
             curl -sS -X POST "https://api.telegram.org/bot${BOT_TOKEN}/sendDocument" \
-              -F chat_id="${CHAT_ID}" \
-              -F parse_mode="HTML" \
-              -F document=@"${ZIP_FILE}" \
-              -F caption="${MESSAGE}"
+              -F chat_id="${CHAT_ID}" -F parse_mode="HTML" \
+              -F document=@"${ZIP_FILE}" -F caption="$(echo -e "$MESSAGE")"
           else
-            echo "[INFO] Build failed or missing artifact. Sending text notification..."
-            # Fallback to simple URL-encoded text message
             curl -sS -X POST "https://api.telegram.org/bot${BOT_TOKEN}/sendMessage" \
-              -d chat_id="${CHAT_ID}" \
-              -d parse_mode="HTML" \
-              --data-urlencode text="${MESSAGE}"
+              -d chat_id="${CHAT_ID}" -d parse_mode="HTML" \
+              --data-urlencode text="$(echo -e "$MESSAGE")"
           fi
