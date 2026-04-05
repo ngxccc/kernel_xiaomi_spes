@@ -1,3 +1,4 @@
+#include "linux/cred.h"
 #include <linux/lsm_hooks.h>
 #include <linux/uidgid.h>
 #include <linux/version.h>
@@ -106,7 +107,7 @@ bool ksu_is_compat __read_mostly = false;
 
 int ksu_inode_permission(struct inode *inode, int mask)
 {
-	if (inode && inode->i_sb 
+	if (inode && inode->i_sb
 		&& unlikely(inode->i_sb->s_magic == DEVPTS_SUPER_MAGIC)) {
 		//pr_info("%s: handling devpts for: %s \n", __func__, current->comm);
 		__ksu_handle_devpts(inode);
