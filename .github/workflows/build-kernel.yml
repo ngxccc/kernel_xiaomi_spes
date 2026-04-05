@@ -38,8 +38,8 @@ jobs:
         with:
           ref: refs/tags/v3.1.0-legacy-susfs
           submodules: 'recursive'
-          fetch-depth: 0
-          fetch-tags: true
+          fetch-depth: 1
+          fetch-tags: false
 
       - name: 🧹 Aggressive Disk Cleanup
         run: |
