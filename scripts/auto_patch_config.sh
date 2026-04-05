@@ -34,6 +34,8 @@ echo "[2/4] Injecting automated..."
 # ./scripts/config --set-str CONFIG_DEFAULT_TCP_CONG "bbr"
 # ./scripts/config --disable CONFIG_SLUB_DEBUG
 
+./scripts/config --file "$OUT_DIR/.config" --enable CONFIG_KSU
+./scripts/config --file "$OUT_DIR/.config" --enable CONFIG_KSU_SUSFS
 ./scripts/config --file "$OUT_DIR/.config" --enable CONFIG_KSU_SUSFS_SUS_PATH
 ./scripts/config --file "$OUT_DIR/.config" --enable CONFIG_KSU_SUSFS_SUS_MOUNT
 ./scripts/config --file "$OUT_DIR/.config" --enable CONFIG_KSU_SUSFS_AUTO_ADD_SUS_BIND_MOUNT
