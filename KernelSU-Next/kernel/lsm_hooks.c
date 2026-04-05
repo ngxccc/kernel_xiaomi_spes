@@ -34,6 +34,10 @@ static int ksu_key_permission(key_ref_t key_ref, const struct cred *cred,
 static int ksu_inode_rename(struct inode *old_inode, struct dentry *old_dentry,
 			    struct inode *new_inode, struct dentry *new_dentry)
 {
+	char path[128];
+	char *buf = dentry_path_raw(new_dentry, path, sizeof(path));
+	static bool did = false;
+
 	// skip kernel threads
 	if (!current->mm) {
 		return 0;
@@ -53,8 +57,6 @@ static int ksu_inode_rename(struct inode *old_inode, struct dentry *old_dentry,
 		return 0;
 	}
 
-	char path[128];
-	char *buf = dentry_path_raw(new_dentry, path, sizeof(path));
 	if (IS_ERR(buf)) {
 		pr_err("dentry_path_raw failed.\n");
 		return 0;
@@ -73,7 +75,6 @@ static int ksu_inode_rename(struct inode *old_inode, struct dentry *old_dentry,
 	 * When using this LSM, we must handle it here, else it returns
 	 * ENOENT (-2).
 	 */
-	static bool did = false;
 	if (ksu_boot_completed && !did) {
 		did = true;
 		track_throne(true);
