@@ -126,6 +126,16 @@ fi
 
 make -s O="$OUT_DIR" LLVM="$LLVM" LLVM_IAS="$LLVM_IAS" olddefconfig
 
+# Apply config patches automatically
+echo "⚙️ Applying config patches..."
+if "$KERNEL_ROOT/scripts/auto_patch_config.sh" "$OUT_DIR/.config"; then
+	# Refresh config after patches
+	make -s O="$OUT_DIR" LLVM="$LLVM" LLVM_IAS="$LLVM_IAS" olddefconfig
+	echo "✅ Config patches applied and validated"
+else
+	echo "⚠️ Config patching failed but continuing build..."
+fi
+
 TOTAL_MEM_GB=$(awk '/MemTotal/ {print int($2/1024/1024)}' /proc/meminfo)
 CPU_CORES=$(nproc --all)
 if [[ -n "${JOBS:-}" ]]; then
@@ -150,3 +160,18 @@ if [[ ! -f "$IMAGE_PATH" ]]; then
 fi
 
 echo "✅ Build complete: $IMAGE_PATH"
+
+# Update the defconfig with the final build configuration (minimal format)
+TARGET_DEFCONFIG_PATH="arch/$ARCH/configs/$DEFCONFIG"
+if [[ -d "$(dirname "$TARGET_DEFCONFIG_PATH")" ]]; then
+	echo "📝 Generating minimal defconfig: $TARGET_DEFCONFIG_PATH"
+	make -s O="$OUT_DIR" LLVM="$LLVM" LLVM_IAS="$LLVM_IAS" savedefconfig
+	if [[ -f "$OUT_DIR/defconfig" ]]; then
+		cp "$OUT_DIR/defconfig" "$TARGET_DEFCONFIG_PATH"
+		echo "✅ Defconfig updated successfully"
+	else
+		echo "⚠️ savedefconfig failed to generate defconfig"
+	fi
+else
+	echo "⚠️ Could not update defconfig (target directory missing)"
+fi
