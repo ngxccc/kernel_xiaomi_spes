@@ -48,6 +48,8 @@ jobs:
         env:
           KSU_SUBMODULE_TAG: ${{ github.event.inputs.ksu_submodule_tag || 'v3.1.0-legacy-susfs' }}
         run: |
+          echo "Cleaning KernelSU-Next"
+          bash ./scripts/kernel_su_next_setup.sh --cleanup
           echo "📌 Using KSU tag: ${KSU_SUBMODULE_TAG}"
           bash ./scripts/kernel_su_next_setup.sh "${KSU_SUBMODULE_TAG}" --cleanup
           git -C KernelSU-Next rev-parse --short HEAD
