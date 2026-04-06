@@ -42,14 +42,14 @@ jobs:
         with:
           submodules: false
           fetch-depth: 0
-          fetch-tags: true 
+          fetch-tags: false
 
       - name: 🔖 Sync KernelSU-Next Via Script
         env:
           KSU_SUBMODULE_TAG: ${{ github.event.inputs.ksu_submodule_tag || 'v3.1.0-legacy-susfs' }}
         run: |
           echo "📌 Using KSU tag: ${KSU_SUBMODULE_TAG}"
-          bash ./scripts/kernel_su_next_setup.sh "${KSU_SUBMODULE_TAG}"
+          bash ./scripts/kernel_su_next_setup.sh "${KSU_SUBMODULE_TAG}" --cleanup
           git -C KernelSU-Next rev-parse --short HEAD
 
       - name: 🧹 Aggressive Disk Cleanup
