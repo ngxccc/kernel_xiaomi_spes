@@ -42,7 +42,7 @@ jobs:
         with:
           submodules: false
           fetch-depth: 0
-          fetch-tags: false
+          fetch-tags: true 
 
       - name: 🔖 Sync KernelSU-Next Via Script
         env:
